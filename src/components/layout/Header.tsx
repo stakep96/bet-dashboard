@@ -62,8 +62,8 @@ export function Header({ onNewEntry }: HeaderProps) {
             {bancas.map((banca) => (
               <SelectItem key={banca.id} value={banca.id}>{banca.name}</SelectItem>
             ))}
-            <SelectItem value="new" className="text-primary">
-              <span className="flex items-center justify-center gap-2 w-full">
+            <SelectItem value="new" className="text-primary pl-2 justify-center">
+              <span className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
                 Adicionar banca
               </span>
