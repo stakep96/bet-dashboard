@@ -1,15 +1,63 @@
+import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { dailyPnL } from '@/data/mockData';
+import { useBanca } from '@/contexts/BancaContext';
+import { subDays, subWeeks, subMonths, subYears, isAfter } from 'date-fns';
+
+type Period = '1W' | '1M' | '3M' | '6M' | '1Y';
 
 export function DailyPnLChart() {
-  const totalPnL = dailyPnL.reduce((acc, curr) => acc + curr.pnl, 0);
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
+  const { selectedBanca } = useBanca();
+
+  // Filter data based on selected period
+  const getFilteredData = () => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (selectedPeriod) {
+      case '1W':
+        startDate = subWeeks(now, 1);
+        break;
+      case '1M':
+        startDate = subMonths(now, 1);
+        break;
+      case '3M':
+        startDate = subMonths(now, 3);
+        break;
+      case '6M':
+        startDate = subMonths(now, 6);
+        break;
+      case '1Y':
+        startDate = subYears(now, 1);
+        break;
+      default:
+        startDate = subMonths(now, 3);
+    }
+
+    return dailyPnL.filter((item) => {
+      const [day, month] = item.date.split('/').map(Number);
+      const itemDate = new Date(2025, month - 1, day);
+      return isAfter(itemDate, startDate);
+    });
+  };
+
+  const filteredData = getFilteredData();
+  const totalPnL = filteredData.reduce((acc, curr) => acc + curr.pnl, 0);
   const isPositive = totalPnL >= 0;
 
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
+            {selectedBanca && (
+              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                {selectedBanca.name}
+              </span>
+            )}
+          </div>
           <p className="text-2xl font-bold mt-1">
             R$ {Math.abs(totalPnL).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
@@ -17,19 +65,39 @@ export function DailyPnLChart() {
         <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
           isPositive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
         }`}>
-          {isPositive ? '+' : '-'}{((totalPnL / 10000) * 100).toFixed(1)}%
+          {isPositive ? '+' : '-'}{((Math.abs(totalPnL) / 10000) * 100).toFixed(1)}%
         </div>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        {(['1W', '1M', '3M', '6M', '1Y'] as Period[]).map((period) => (
+          <button
+            key={period}
+            onClick={() => setSelectedPeriod(period)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              period === selectedPeriod 
+                ? 'bg-primary text-primary-foreground' 
+                : 'text-muted-foreground hover:bg-secondary'
+            }`}
+          >
+            {period}
+          </button>
+        ))}
       </div>
 
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={dailyPnL} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+          <BarChart data={filteredData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
               dataKey="date" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              interval={Math.max(0, Math.floor(filteredData.length / 10))}
+              angle={-45}
+              textAnchor="end"
+              height={50}
             />
             <YAxis 
               axisLine={false} 
@@ -56,7 +124,7 @@ export function DailyPnLChart() {
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             >
-              {dailyPnL.map((entry, index) => (
+              {filteredData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.pnl >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))'} 
