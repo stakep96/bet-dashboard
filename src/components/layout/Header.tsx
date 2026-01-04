@@ -14,7 +14,21 @@ interface HeaderProps {
 }
 
 export function Header({ onNewEntry }: HeaderProps) {
-  const [selectedBanca, setSelectedBanca] = useState('2025');
+  const [selectedBanca, setSelectedBanca] = useState('2024');
+  const [bancas, setBancas] = useState(['2024', '2025', '2026']);
+
+  const handleBancaChange = (value: string) => {
+    if (value === 'new') {
+      // Criar nova banca com próximo ano
+      const years = bancas.map(b => parseInt(b)).filter(n => !isNaN(n));
+      const nextYear = Math.max(...years) + 1;
+      const newBanca = nextYear.toString();
+      setBancas([...bancas, newBanca]);
+      setSelectedBanca(newBanca);
+    } else {
+      setSelectedBanca(value);
+    }
+  };
 
   return (
     <header className="h-[72px] bg-card border-b border-border flex items-center justify-between px-6">
@@ -31,15 +45,15 @@ export function Header({ onNewEntry }: HeaderProps) {
         </div>
 
         {/* Banca Selector */}
-        <Select value={selectedBanca} onValueChange={setSelectedBanca}>
+        <Select value={selectedBanca} onValueChange={handleBancaChange}>
           <SelectTrigger className="w-[140px] bg-transparent border-border text-foreground">
             <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Selecionar" />
           </SelectTrigger>
           <SelectContent className="bg-card border-border">
-            <SelectItem value="2024">2024</SelectItem>
-            <SelectItem value="2025">2025</SelectItem>
-            <SelectItem value="2026">2026</SelectItem>
+            {bancas.map((banca) => (
+              <SelectItem key={banca} value={banca}>{banca}</SelectItem>
+            ))}
             <SelectItem value="new" className="text-primary">
               <span className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
