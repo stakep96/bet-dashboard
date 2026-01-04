@@ -125,10 +125,10 @@ export function BankrollChart() {
               axisLine={false} 
               tickLine={false}
               tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
-              interval={Math.max(0, Math.floor(chartData.length / 8))}
+              interval={0}
               angle={-45}
               textAnchor="end"
-              height={50}
+              height={45}
             />
             <YAxis 
               axisLine={false} 
