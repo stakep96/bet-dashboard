@@ -23,7 +23,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Sidebar />
       
-      <div className="ml-64">
+      <div className="ml-72">
         <Header onNewEntry={() => setShowNewBetForm(true)} />
         
         <main className="p-6">
