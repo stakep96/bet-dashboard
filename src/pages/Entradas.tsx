@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,25 +14,65 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Search, Filter, Download, Plus, Upload } from 'lucide-react';
-import { useRef } from 'react';
 import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
+import { useBanca, Entrada } from '@/contexts/BancaContext';
 
-const mockEntradas = [
-  { id: 1, data: '03/01/2025', evento: 'Real Madrid vs Barcelona', mercado: 'Resultado Final', odd: 1.85, stake: 100, resultado: 'G', lucro: 85 },
-  { id: 2, data: '02/01/2025', evento: 'Lakers vs Warriors', mercado: 'Over 220.5', odd: 1.90, stake: 150, resultado: 'G', lucro: 135 },
-  { id: 3, data: '02/01/2025', evento: 'Djokovic vs Nadal', mercado: 'Set Handicap', odd: 2.10, stake: 80, resultado: 'P', lucro: -80 },
-  { id: 4, data: '01/01/2025', evento: 'Manchester City vs Liverpool', mercado: 'Ambas Marcam', odd: 1.75, stake: 120, resultado: 'G', lucro: 90 },
-  { id: 5, data: '01/01/2025', evento: 'Corinthians vs Palmeiras', mercado: 'Under 2.5', odd: 1.95, stake: 100, resultado: 'G', lucro: 95 },
-  { id: 6, data: '31/12/2024', evento: 'LOUD vs FURIA', mercado: 'ML LOUD', odd: 1.65, stake: 200, resultado: 'P', lucro: -200 },
-  { id: 7, data: '31/12/2024', evento: 'PSG vs Monaco', mercado: 'Handicap -1', odd: 2.20, stake: 75, resultado: 'G', lucro: 90 },
-  { id: 8, data: '30/12/2024', evento: 'Bucks vs Celtics', mercado: 'Spread +5.5', odd: 1.88, stake: 100, resultado: 'G', lucro: 88 },
-];
+const parseCSVLine = (line: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  
+  return result;
+};
+
+const parseMoneyValue = (value: string): number => {
+  if (!value) return 0;
+  // Remove "R$", espaços e troca vírgula por ponto
+  const cleaned = value
+    .replace(/R\$\s*/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .trim();
+  return parseFloat(cleaned) || 0;
+};
+
+const parseOdd = (value: string): number => {
+  if (!value) return 0;
+  const cleaned = value.replace(',', '.').trim();
+  return parseFloat(cleaned) || 0;
+};
+
+const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' => {
+  const upper = value?.toUpperCase().trim();
+  if (upper === 'G' || upper === 'GREEN' || upper === 'GANHOU') return 'G';
+  if (upper === 'P' || upper === 'RED' || upper === 'PERDEU') return 'P';
+  if (upper === 'C' || upper === 'CASHOUT' || upper === 'CASH') return 'C';
+  if (upper === 'D' || upper === 'DEVOLVIDA' || upper === 'DEV') return 'D';
+  return 'P';
+};
 
 const Entradas = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { getEntradasByBanca, addEntradas, selectedBanca } = useBanca();
+  
+  const entradasDaBanca = getEntradasByBanca();
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,6 +80,11 @@ const Entradas = () => {
 
     if (!file.name.endsWith('.csv')) {
       toast.error('Por favor, selecione um arquivo CSV válido.');
+      return;
+    }
+
+    if (!selectedBanca) {
+      toast.error('Selecione uma banca antes de importar.');
       return;
     }
 
@@ -53,25 +98,74 @@ const Entradas = () => {
         return;
       }
 
-      // TODO: Processar as linhas do CSV e adicionar ao estado/banco
-      console.log('CSV importado:', lines);
-      toast.success(`${lines.length - 1} entradas importadas com sucesso!`);
+      // Pular cabeçalho e processar linhas
+      const novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[] = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i]);
+        
+        // Formato esperado: Data, Modalidade, Data do evento, Partida/Confronto, Mercado, Entrada, Odd, Stake, Resultado, G/P, PRÉ/LIVE, Site
+        if (cols.length >= 10) {
+          novasEntradas.push({
+            data: cols[0] || '',
+            modalidade: cols[1] || '',
+            dataEvento: cols[2] || '',
+            evento: cols[3] || '',
+            mercado: cols[4] || '',
+            entrada: cols[5] || '',
+            odd: parseOdd(cols[6]),
+            stake: parseMoneyValue(cols[7]),
+            resultado: mapResultado(cols[8]),
+            lucro: parseMoneyValue(cols[9]),
+            timing: cols[10]?.trim() || 'PRÉ',
+            site: cols[11]?.trim() || '',
+          });
+        }
+      }
+
+      if (novasEntradas.length === 0) {
+        toast.error('Nenhuma entrada válida encontrada no CSV.');
+        return;
+      }
+
+      addEntradas(novasEntradas);
+      toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca.name}"!`);
     };
     reader.onerror = () => {
       toast.error('Erro ao ler o arquivo CSV.');
     };
     reader.readAsText(file);
     
-    // Limpar input para permitir reimportar o mesmo arquivo
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const filteredEntradas = mockEntradas.filter(entrada =>
+  const filteredEntradas = entradasDaBanca.filter(entrada =>
     entrada.evento.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entrada.mercado.toLowerCase().includes(searchTerm.toLowerCase())
+    entrada.mercado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    entrada.modalidade.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getResultadoLabel = (resultado: string) => {
+    switch (resultado) {
+      case 'G': return 'Ganhou';
+      case 'P': return 'Perdeu';
+      case 'C': return 'Cashout';
+      case 'D': return 'Devolvida';
+      default: return resultado;
+    }
+  };
+
+  const getResultadoVariant = (resultado: string) => {
+    switch (resultado) {
+      case 'G': return 'bg-green-500/10 text-green-500 hover:bg-green-500/20';
+      case 'P': return 'bg-red-500/10 text-red-500 hover:bg-red-500/20';
+      case 'C': return 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20';
+      case 'D': return 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20';
+      default: return '';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,7 +178,9 @@ const Entradas = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-foreground">Entradas</h1>
-              <p className="text-muted-foreground">Histórico completo de todas as suas apostas</p>
+              <p className="text-muted-foreground">
+                Histórico de apostas da banca "{selectedBanca?.name}" ({entradasDaBanca.length} entradas)
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -133,41 +229,55 @@ const Entradas = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Evento</TableHead>
-                    <TableHead>Mercado</TableHead>
-                    <TableHead className="text-center">Odd</TableHead>
-                    <TableHead className="text-right">Stake</TableHead>
-                    <TableHead className="text-center">Resultado</TableHead>
-                    <TableHead className="text-right">Lucro/Perda</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntradas.map((entrada) => (
-                    <TableRow key={entrada.id}>
-                      <TableCell className="text-muted-foreground">{entrada.data}</TableCell>
-                      <TableCell className="font-medium">{entrada.evento}</TableCell>
-                      <TableCell>{entrada.mercado}</TableCell>
-                      <TableCell className="text-center">{entrada.odd.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">R$ {entrada.stake.toFixed(2)}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge 
-                          variant={entrada.resultado === 'G' ? 'default' : 'destructive'}
-                          className={entrada.resultado === 'G' ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20' : ''}
-                        >
-                          {entrada.resultado === 'G' ? 'Ganhou' : 'Perdeu'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className={`text-right font-medium ${entrada.lucro >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {entrada.lucro >= 0 ? '+' : ''}R$ {entrada.lucro.toFixed(2)}
-                      </TableCell>
+              {filteredEntradas.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p>Nenhuma entrada encontrada.</p>
+                  <p className="text-sm mt-1">Importe um CSV ou adicione entradas manualmente.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Modalidade</TableHead>
+                      <TableHead>Evento</TableHead>
+                      <TableHead>Mercado</TableHead>
+                      <TableHead className="text-center">Odd</TableHead>
+                      <TableHead className="text-right">Stake</TableHead>
+                      <TableHead className="text-center">Resultado</TableHead>
+                      <TableHead className="text-right">Lucro/Perda</TableHead>
+                      <TableHead>Site</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEntradas.map((entrada) => (
+                      <TableRow key={entrada.id}>
+                        <TableCell className="text-muted-foreground">{entrada.data}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{entrada.modalidade}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium max-w-[200px] truncate" title={entrada.evento}>
+                          {entrada.evento}
+                        </TableCell>
+                        <TableCell className="max-w-[150px] truncate" title={entrada.mercado}>
+                          {entrada.mercado}
+                        </TableCell>
+                        <TableCell className="text-center">{entrada.odd.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">R$ {entrada.stake.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={getResultadoVariant(entrada.resultado)}>
+                            {getResultadoLabel(entrada.resultado)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${entrada.lucro >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {entrada.lucro >= 0 ? '+' : ''}R$ {entrada.lucro.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{entrada.site}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </main>

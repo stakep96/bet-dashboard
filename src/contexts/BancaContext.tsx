@@ -6,11 +6,31 @@ interface Banca {
   balance: number;
 }
 
+export interface Entrada {
+  id: string;
+  data: string;
+  dataEvento: string;
+  modalidade: string;
+  evento: string;
+  mercado: string;
+  entrada: string;
+  odd: number;
+  stake: number;
+  resultado: 'G' | 'P' | 'C' | 'D';
+  lucro: number;
+  timing: string;
+  site: string;
+  bancaId: string;
+}
+
 interface BancaContextType {
   bancas: Banca[];
   selectedBanca: Banca | null;
   setSelectedBanca: (banca: Banca) => void;
   addBanca: (name: string) => void;
+  entradas: Entrada[];
+  addEntradas: (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => void;
+  getEntradasByBanca: () => Entrada[];
 }
 
 const BancaContext = createContext<BancaContextType | undefined>(undefined);
@@ -21,7 +41,8 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     { id: '2', name: '2025', balance: 12350.75 },
     { id: '3', name: 'Futebol', balance: 3200 },
   ]);
-  const [selectedBanca, setSelectedBanca] = useState<Banca>(bancas[1]); // 2025 por padrão
+  const [selectedBanca, setSelectedBanca] = useState<Banca>(bancas[1]);
+  const [entradas, setEntradas] = useState<Entrada[]>([]);
 
   const addBanca = (name: string) => {
     const newBanca: Banca = {
@@ -33,8 +54,33 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     setSelectedBanca(newBanca);
   };
 
+  const addEntradas = (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => {
+    if (!selectedBanca) return;
+    
+    const entradasComId: Entrada[] = novasEntradas.map((entrada, index) => ({
+      ...entrada,
+      id: `${Date.now()}-${index}`,
+      bancaId: selectedBanca.id,
+    }));
+    
+    setEntradas(prev => [...prev, ...entradasComId]);
+  };
+
+  const getEntradasByBanca = (): Entrada[] => {
+    if (!selectedBanca) return [];
+    return entradas.filter(e => e.bancaId === selectedBanca.id);
+  };
+
   return (
-    <BancaContext.Provider value={{ bancas, selectedBanca, setSelectedBanca, addBanca }}>
+    <BancaContext.Provider value={{ 
+      bancas, 
+      selectedBanca, 
+      setSelectedBanca, 
+      addBanca,
+      entradas,
+      addEntradas,
+      getEntradasByBanca,
+    }}>
       {children}
     </BancaContext.Provider>
   );
