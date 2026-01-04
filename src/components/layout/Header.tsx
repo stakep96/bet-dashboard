@@ -31,22 +31,23 @@ export function Header({ onNewEntry }: HeaderProps) {
         </div>
 
         {/* Banca Selector */}
-        <div className="flex items-center gap-2">
-          <Select value={selectedBanca} onValueChange={setSelectedBanca}>
-            <SelectTrigger className="w-[120px] bg-transparent border-border text-foreground">
-              <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Selecionar" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2025">2025</SelectItem>
-              <SelectItem value="2026">2026</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
+        <Select value={selectedBanca} onValueChange={setSelectedBanca}>
+          <SelectTrigger className="w-[140px] bg-transparent border-border text-foreground">
+            <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
+            <SelectValue placeholder="Selecionar" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="2024">2024</SelectItem>
+            <SelectItem value="2025">2025</SelectItem>
+            <SelectItem value="2026">2026</SelectItem>
+            <SelectItem value="new" className="text-primary">
+              <span className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Adicionar banca
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Actions */}
