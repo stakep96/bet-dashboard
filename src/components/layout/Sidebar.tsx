@@ -42,17 +42,7 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-card border-r border-border flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-[72px] border-b border-border">
-        <svg width="0" height="0" className="absolute">
-          <defs>
-            <clipPath id="roundedHexagon" clipPathUnits="objectBoundingBox">
-              <path d="M0.5,0.02 C0.55,0.02 0.6,0.04 0.64,0.08 L0.86,0.22 C0.92,0.26 0.96,0.32 0.98,0.38 L0.98,0.62 C0.96,0.68 0.92,0.74 0.86,0.78 L0.64,0.92 C0.6,0.96 0.55,0.98 0.5,0.98 C0.45,0.98 0.4,0.96 0.36,0.92 L0.14,0.78 C0.08,0.74 0.04,0.68 0.02,0.62 L0.02,0.38 C0.04,0.32 0.08,0.26 0.14,0.22 L0.36,0.08 C0.4,0.04 0.45,0.02 0.5,0.02" />
-            </clipPath>
-          </defs>
-        </svg>
-        <div 
-          className="w-10 h-10 overflow-hidden flex-shrink-0"
-          style={{ clipPath: 'url(#roundedHexagon)' }}
-        >
+        <div className="w-10 h-10 overflow-hidden flex-shrink-0 rounded-lg">
           <img src={logo} alt="Hyper Bets Logo" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1">
