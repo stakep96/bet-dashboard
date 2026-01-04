@@ -31,17 +31,22 @@ export function Header({ onNewEntry }: HeaderProps) {
         </div>
 
         {/* Banca Selector */}
-        <Select value={selectedBanca} onValueChange={setSelectedBanca}>
-          <SelectTrigger className="w-[140px] bg-transparent border-border text-foreground">
-            <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Selecionar banca" />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            <SelectItem value="2024">Banca 2024</SelectItem>
-            <SelectItem value="2025">Banca 2025</SelectItem>
-            <SelectItem value="2026">Banca 2026</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={selectedBanca} onValueChange={setSelectedBanca}>
+            <SelectTrigger className="w-[120px] bg-transparent border-border text-foreground">
+              <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Selecionar" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              <SelectItem value="2024">2024</SelectItem>
+              <SelectItem value="2025">2025</SelectItem>
+              <SelectItem value="2026">2026</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Actions */}
