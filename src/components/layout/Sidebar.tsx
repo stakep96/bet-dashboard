@@ -42,7 +42,10 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r border-border flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-[72px] border-b border-border">
-        <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+        <div 
+          className="w-10 h-10 overflow-hidden flex-shrink-0"
+          style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+        >
           <img src={logo} alt="Hyper Bets Logo" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1">
