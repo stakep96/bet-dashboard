@@ -93,11 +93,11 @@ export function DailyPnLChart() {
               dataKey="date" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              interval={Math.max(0, Math.floor(filteredData.length / 10))}
+              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+              interval={0}
               angle={-45}
               textAnchor="end"
-              height={50}
+              height={45}
             />
             <YAxis 
               axisLine={false} 
