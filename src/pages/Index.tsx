@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { BankrollChart } from '@/components/dashboard/BankrollChart';
 import { WinRateChart } from '@/components/dashboard/WinRateChart';
+import { DailyPnLChart } from '@/components/dashboard/DailyPnLChart';
 import { RecentBets } from '@/components/dashboard/RecentBets';
 import { MonthlyPerformance } from '@/components/dashboard/MonthlyPerformance';
 import { NewBetForm } from '@/components/forms/NewBetForm';
@@ -66,6 +67,11 @@ const Index = () => {
               <BankrollChart />
             </div>
             <WinRateChart />
+          </div>
+
+          {/* PNL Chart */}
+          <div className="mb-6">
+            <DailyPnLChart />
           </div>
 
           {/* Tables Row */}
