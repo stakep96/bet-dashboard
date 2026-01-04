@@ -39,7 +39,7 @@ export function Sidebar() {
   const [activeItem, setActiveItem] = useState('Visão Geral');
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r border-border flex flex-col">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-card border-r border-border flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-[72px] border-b border-border">
         <svg width="0" height="0" className="absolute">
