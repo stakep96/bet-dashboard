@@ -2,17 +2,17 @@ import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Respons
 import { bankrollHistory } from '@/data/mockData';
 
 export function BankrollChart() {
-  // Transform data for candlestick-style visualization
+  // Transform data for waterfall chart - each bar shows the change from previous value
   const chartData = bankrollHistory.map((item, index) => {
-    const prevValue = index > 0 ? bankrollHistory[index - 1].value : item.value;
+    const prevValue = index > 0 ? bankrollHistory[index - 1].value : 0;
     const isPositive = item.change >= 0;
     
     return {
       ...item,
-      low: isPositive ? prevValue : item.value,
-      high: isPositive ? item.value : prevValue,
-      positive: isPositive ? item.change : 0,
-      negative: !isPositive ? item.change : 0,
+      // For waterfall: bar starts at previous value, extends to current value
+      base: isPositive ? prevValue : item.value,
+      barHeight: Math.abs(item.change),
+      isPositive,
     };
   });
 
@@ -50,11 +50,11 @@ export function BankrollChart() {
           <span className="text-muted-foreground">Positivo</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(24, 70%, 35%)' }} />
+          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(24, 50%, 30%)' }} />
           <span className="text-muted-foreground">Negativo</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(24, 90%, 45%)' }} />
+          <div className="w-6 h-0.5 rounded" style={{ backgroundColor: 'hsl(24, 80%, 60%)', borderStyle: 'dashed' }} />
           <span className="text-muted-foreground">Subtotal</span>
         </div>
       </div>
@@ -62,23 +62,16 @@ export function BankrollChart() {
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(24, 95%, 58%)" />
-                <stop offset="100%" stopColor="hsl(24, 95%, 48%)" />
-              </linearGradient>
-              <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(24, 70%, 40%)" />
-                <stop offset="100%" stopColor="hsl(24, 70%, 30%)" />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
               dataKey="date" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-              interval="preserveStartEnd"
+              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+              interval={4}
+              angle={-45}
+              textAnchor="end"
+              height={50}
             />
             <YAxis 
               axisLine={false} 
@@ -88,15 +81,9 @@ export function BankrollChart() {
                 if (value < 0) return `-R$${Math.abs(value/1000).toFixed(0)}k`;
                 return `R$${(value/1000).toFixed(0)}k`
               }}
-              domain={['dataMin - 2000', 'dataMax + 2000']}
+              domain={[-5000, 35000]}
             />
             <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-              }}
               content={({ active, payload, label }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
@@ -116,31 +103,39 @@ export function BankrollChart() {
                 return null;
               }}
             />
-            <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
+            <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeOpacity={0.5} />
             
-            {/* Candlestick bars */}
+            {/* Invisible base bar to position the visible bar */}
             <Bar 
-              dataKey="high" 
-              stackId="candle"
-              radius={[2, 2, 0, 0]}
-              maxBarSize={12}
+              dataKey="base" 
+              stackId="waterfall"
+              fill="transparent"
+              maxBarSize={8}
+            />
+            
+            {/* Visible bar showing the change */}
+            <Bar 
+              dataKey="barHeight" 
+              stackId="waterfall"
+              maxBarSize={8}
+              radius={[1, 1, 1, 1]}
             >
               {chartData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={entry.change >= 0 ? 'url(#positiveGradient)' : 'url(#negativeGradient)'}
+                  fill={entry.isPositive ? 'hsl(24, 95%, 53%)' : 'hsl(24, 50%, 30%)'}
                 />
               ))}
             </Bar>
             
-            {/* Subtotal line */}
+            {/* Subtotal line showing accumulated value */}
             <Line 
               type="stepAfter" 
               dataKey="value" 
-              stroke="hsl(24, 90%, 45%)"
+              stroke="hsl(24, 80%, 60%)"
               strokeWidth={1.5}
               dot={false}
-              strokeDasharray="4 2"
+              strokeDasharray="4 3"
             />
           </ComposedChart>
         </ResponsiveContainer>
