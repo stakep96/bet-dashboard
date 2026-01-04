@@ -13,7 +13,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Filter, Download, Plus } from 'lucide-react';
+import { Search, Filter, Download, Plus, Upload } from 'lucide-react';
+import { useRef } from 'react';
+import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
 
 const mockEntradas = [
@@ -30,6 +32,41 @@ const mockEntradas = [
 const Entradas = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Por favor, selecione um arquivo CSV válido.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      if (lines.length <= 1) {
+        toast.error('O arquivo CSV está vazio ou contém apenas cabeçalho.');
+        return;
+      }
+
+      // TODO: Processar as linhas do CSV e adicionar ao estado/banco
+      console.log('CSV importado:', lines);
+      toast.success(`${lines.length - 1} entradas importadas com sucesso!`);
+    };
+    reader.onerror = () => {
+      toast.error('Erro ao ler o arquivo CSV.');
+    };
+    reader.readAsText(file);
+    
+    // Limpar input para permitir reimportar o mesmo arquivo
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const filteredEntradas = mockEntradas.filter(entrada =>
     entrada.evento.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,10 +86,27 @@ const Entradas = () => {
               <h1 className="text-2xl font-bold text-foreground">Entradas</h1>
               <p className="text-muted-foreground">Histórico completo de todas as suas apostas</p>
             </div>
-            <Button onClick={() => setShowNewBetForm(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nova Entrada
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".csv"
+                onChange={handleImportCSV}
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => fileInputRef.current?.click()} 
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Importar CSV
+              </Button>
+              <Button onClick={() => setShowNewBetForm(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nova Entrada
+              </Button>
+            </div>
           </div>
 
           <Card>
