@@ -1,39 +1,96 @@
+import { useState } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { bankrollHistory } from '@/data/mockData';
+import { useBanca } from '@/contexts/BancaContext';
+import { subDays, subWeeks, subMonths, subYears, isAfter, parse } from 'date-fns';
+
+type Period = '1D' | '1W' | '1M' | '3M' | '1Y';
 
 export function BankrollChart() {
-  // Transform data for waterfall chart - each bar shows the change from previous value
-  const chartData = bankrollHistory.map((item, index) => {
-    const prevValue = index > 0 ? bankrollHistory[index - 1].value : 0;
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
+  const { selectedBanca } = useBanca();
+
+  // Filter data based on selected period
+  const getFilteredData = () => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (selectedPeriod) {
+      case '1D':
+        startDate = subDays(now, 1);
+        break;
+      case '1W':
+        startDate = subWeeks(now, 1);
+        break;
+      case '1M':
+        startDate = subMonths(now, 1);
+        break;
+      case '3M':
+        startDate = subMonths(now, 3);
+        break;
+      case '1Y':
+        startDate = subYears(now, 1);
+        break;
+      default:
+        startDate = subMonths(now, 3);
+    }
+
+    return bankrollHistory.filter((item) => {
+      // Parse date in DD/MM format and assume current year
+      const [day, month] = item.date.split('/').map(Number);
+      const itemDate = new Date(2025, month - 1, day);
+      return isAfter(itemDate, startDate);
+    });
+  };
+
+  const filteredHistory = getFilteredData();
+
+  // Transform data for waterfall chart
+  const chartData = filteredHistory.map((item, index) => {
+    const prevValue = index > 0 ? filteredHistory[index - 1].value : 0;
     const isPositive = item.change >= 0;
     
     return {
       ...item,
-      // For waterfall: bar starts at previous value, extends to current value
       base: isPositive ? prevValue : item.value,
       barHeight: Math.abs(item.change),
       isPositive,
     };
   });
 
+  // Calculate current value and growth
+  const currentValue = filteredHistory.length > 0 ? filteredHistory[filteredHistory.length - 1].value : 0;
+  const initialValue = filteredHistory.length > 0 ? filteredHistory[0].value - (filteredHistory[0].change || 0) : 0;
+  const growthPercent = initialValue > 0 ? ((currentValue - initialValue) / initialValue * 100).toFixed(0) : 0;
+
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground">Evolução da Banca</h3>
-          <p className="text-2xl font-bold mt-1">R$ 16.564,45</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Evolução da Banca</h3>
+            {selectedBanca && (
+              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                {selectedBanca.name}
+              </span>
+            )}
+          </div>
+          <p className="text-2xl font-bold mt-1">R$ {currentValue.toLocaleString('pt-BR')}</p>
         </div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded bg-success/10 text-success text-sm font-medium">
-          +465%
+        <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
+          Number(growthPercent) >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+        }`}>
+          {Number(growthPercent) >= 0 ? '+' : ''}{growthPercent}%
         </div>
       </div>
 
       <div className="flex gap-2 mb-4">
-        {['1D', '1W', '1M', '3M', '1Y'].map((period) => (
+        {(['1D', '1W', '1M', '3M', '1Y'] as Period[]).map((period) => (
           <button
             key={period}
+            onClick={() => setSelectedPeriod(period)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              period === '1M' 
+              period === selectedPeriod 
                 ? 'bg-primary text-primary-foreground' 
                 : 'text-muted-foreground hover:bg-secondary'
             }`}
@@ -68,7 +125,7 @@ export function BankrollChart() {
               axisLine={false} 
               tickLine={false}
               tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
-              interval={4}
+              interval={Math.max(0, Math.floor(chartData.length / 8))}
               angle={-45}
               textAnchor="end"
               height={50}
@@ -81,7 +138,7 @@ export function BankrollChart() {
                 if (value < 0) return `-R$${Math.abs(value/1000).toFixed(0)}k`;
                 return `R$${(value/1000).toFixed(0)}k`
               }}
-              domain={[-5000, 35000]}
+              domain={['dataMin - 2000', 'dataMax + 2000']}
             />
             <Tooltip 
               content={({ active, payload, label }) => {
@@ -105,7 +162,6 @@ export function BankrollChart() {
             />
             <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeOpacity={0.5} />
             
-            {/* Invisible base bar to position the visible bar */}
             <Bar 
               dataKey="base" 
               stackId="waterfall"
@@ -113,7 +169,6 @@ export function BankrollChart() {
               maxBarSize={8}
             />
             
-            {/* Visible bar showing the change */}
             <Bar 
               dataKey="barHeight" 
               stackId="waterfall"
@@ -128,7 +183,6 @@ export function BankrollChart() {
               ))}
             </Bar>
             
-            {/* Subtotal line showing accumulated value */}
             <Line 
               type="stepAfter" 
               dataKey="value" 

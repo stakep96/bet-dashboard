@@ -17,14 +17,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
+import { useBanca } from '@/contexts/BancaContext';
 
 interface HeaderProps {
   onNewEntry: () => void;
 }
 
 export function Header({ onNewEntry }: HeaderProps) {
-  const [selectedBanca, setSelectedBanca] = useState('2024');
-  const [bancas, setBancas] = useState(['2024', '2025', '2026']);
+  const { bancas, selectedBanca, setSelectedBanca, addBanca } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
 
@@ -33,14 +33,14 @@ export function Header({ onNewEntry }: HeaderProps) {
       setNewBancaName('');
       setIsDialogOpen(true);
     } else {
-      setSelectedBanca(value);
+      const banca = bancas.find(b => b.id === value);
+      if (banca) setSelectedBanca(banca);
     }
   };
 
   const handleCreateBanca = () => {
     if (newBancaName.trim()) {
-      setBancas([...bancas, newBancaName.trim()]);
-      setSelectedBanca(newBancaName.trim());
+      addBanca(newBancaName);
       setIsDialogOpen(false);
       setNewBancaName('');
     }
@@ -61,14 +61,16 @@ export function Header({ onNewEntry }: HeaderProps) {
         </div>
 
         {/* Banca Selector */}
-        <Select value={selectedBanca} onValueChange={handleBancaChange}>
-          <SelectTrigger className="w-[140px] bg-transparent border-border text-foreground">
+        <Select value={selectedBanca?.id || ''} onValueChange={handleBancaChange}>
+          <SelectTrigger className="w-[160px] bg-transparent border-border text-foreground">
             <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Selecionar" />
+            <SelectValue placeholder="Selecionar banca">
+              {selectedBanca?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-card border-border">
             {bancas.map((banca) => (
-              <SelectItem key={banca} value={banca}>{banca}</SelectItem>
+              <SelectItem key={banca.id} value={banca.id}>{banca.name}</SelectItem>
             ))}
             <SelectItem value="new" className="text-primary">
               <span className="flex items-center gap-2">
