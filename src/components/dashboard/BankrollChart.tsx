@@ -1,49 +1,17 @@
 import { useState } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
-import { bankrollHistory } from '@/data/mockData';
 import { useBanca } from '@/contexts/BancaContext';
-import { subDays, subWeeks, subMonths, subYears, isAfter, parse } from 'date-fns';
+import { useDashboardMetrics, filterByPeriod } from '@/hooks/useDashboardMetrics';
 
 type Period = '1D' | '1W' | '1M' | '3M' | '1Y';
 
 export function BankrollChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
   const { selectedBanca } = useBanca();
+  const { bankrollHistory, hasData } = useDashboardMetrics();
 
   // Filter data based on selected period
-  const getFilteredData = () => {
-    const now = new Date();
-    let startDate: Date;
-
-    switch (selectedPeriod) {
-      case '1D':
-        startDate = subDays(now, 1);
-        break;
-      case '1W':
-        startDate = subWeeks(now, 1);
-        break;
-      case '1M':
-        startDate = subMonths(now, 1);
-        break;
-      case '3M':
-        startDate = subMonths(now, 3);
-        break;
-      case '1Y':
-        startDate = subYears(now, 1);
-        break;
-      default:
-        startDate = subMonths(now, 3);
-    }
-
-    return bankrollHistory.filter((item) => {
-      // Parse date in DD/MM format and assume current year
-      const [day, month] = item.date.split('/').map(Number);
-      const itemDate = new Date(2025, month - 1, day);
-      return isAfter(itemDate, startDate);
-    });
-  };
-
-  const filteredHistory = getFilteredData();
+  const filteredHistory = filterByPeriod(bankrollHistory, selectedPeriod);
 
   // Transform data for waterfall chart
   const chartData = filteredHistory.map((item, index) => {
@@ -63,6 +31,29 @@ export function BankrollChart() {
   const initialValue = filteredHistory.length > 0 ? filteredHistory[0].value - (filteredHistory[0].change || 0) : 0;
   const growthPercent = initialValue > 0 ? ((currentValue - initialValue) / initialValue * 100).toFixed(0) : 0;
 
+  if (!hasData) {
+    return (
+      <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Evolução da Banca</h3>
+              {selectedBanca && (
+                <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                  {selectedBanca.name}
+                </span>
+              )}
+            </div>
+            <p className="text-2xl font-bold mt-1">R$ 0,00</p>
+          </div>
+        </div>
+        <div className="h-[220px] flex items-center justify-center text-muted-foreground">
+          <p>Importe entradas para visualizar o gráfico</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
       <div className="flex items-center justify-between mb-6">
@@ -75,7 +66,7 @@ export function BankrollChart() {
               </span>
             )}
           </div>
-          <p className="text-2xl font-bold mt-1">R$ {currentValue.toLocaleString('pt-BR')}</p>
+          <p className="text-2xl font-bold mt-1">R$ {currentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
         </div>
         <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
           Number(growthPercent) >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
@@ -149,10 +140,10 @@ export function BankrollChart() {
                     <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                       <p className="text-xs text-muted-foreground mb-1">{label}</p>
                       <p className="text-sm font-semibold">
-                        Banca: R$ {data.value.toLocaleString('pt-BR')}
+                        Banca: R$ {data.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                       <p className={`text-xs font-medium mt-1 ${isPositive ? 'text-primary' : 'text-muted-foreground'}`}>
-                        Variação: {isPositive ? '+' : ''}R$ {data.change.toLocaleString('pt-BR')}
+                        Variação: {isPositive ? '+' : ''}R$ {data.change.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   );

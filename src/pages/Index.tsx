@@ -8,11 +8,12 @@ import { DailyPnLChart } from '@/components/dashboard/DailyPnLChart';
 import { RecentBets } from '@/components/dashboard/RecentBets';
 import { MonthlyPerformance } from '@/components/dashboard/MonthlyPerformance';
 import { NewBetForm } from '@/components/forms/NewBetForm';
-import { mockDashboardStats } from '@/data/mockData';
+import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { Wallet, TrendingUp, Target, BarChart3 } from 'lucide-react';
 
 const Index = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
+  const { metrics, hasData } = useDashboardMetrics();
 
   const handleNewBet = (data: any) => {
     console.log('Nova entrada:', data);
@@ -31,32 +32,27 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatsCard
               title="Banca Atual"
-              value={`R$ ${mockDashboardStats.currentBankroll.toLocaleString('pt-BR')}`}
-              change={465.42}
-              changeLabel="desde o início"
+              value={`R$ ${metrics.totalPnL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={metrics.totalStaked > 0 ? metrics.roi : undefined}
+              changeLabel="ROI total"
               icon={<Wallet className="w-4 h-4" />}
-              variant="success"
+              variant={metrics.totalPnL >= 0 ? 'success' : 'danger'}
             />
             <StatsCard
               title="ROI Total"
-              value={`${mockDashboardStats.roi.toFixed(2)}%`}
-              change={12.5}
-              changeLabel="vs mês anterior"
+              value={`${metrics.roi.toFixed(2)}%`}
               icon={<TrendingUp className="w-4 h-4" />}
-              variant="success"
+              variant={metrics.roi >= 0 ? 'success' : 'danger'}
             />
             <StatsCard
               title="Win Rate"
-              value={`${mockDashboardStats.winRate}%`}
-              change={2.3}
-              changeLabel="vs mês anterior"
+              value={`${metrics.winRate.toFixed(1)}%`}
               icon={<Target className="w-4 h-4" />}
             />
             <StatsCard
               title="Total Entradas"
-              value={mockDashboardStats.totalEntries.toString()}
-              change={8.1}
-              changeLabel="vs mês anterior"
+              value={metrics.totalEntries.toString()}
+              changeLabel={`${metrics.wins}G / ${metrics.losses}P`}
               icon={<BarChart3 className="w-4 h-4" />}
             />
           </div>

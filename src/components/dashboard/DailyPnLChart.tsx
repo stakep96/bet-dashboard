@@ -1,50 +1,41 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
-import { dailyPnL } from '@/data/mockData';
 import { useBanca } from '@/contexts/BancaContext';
-import { subDays, subWeeks, subMonths, subYears, isAfter } from 'date-fns';
+import { useDashboardMetrics, filterByPeriod } from '@/hooks/useDashboardMetrics';
 
 type Period = '1W' | '1M' | '3M' | '6M' | '1Y';
 
 export function DailyPnLChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
   const { selectedBanca } = useBanca();
+  const { dailyPnL, hasData } = useDashboardMetrics();
 
-  // Filter data based on selected period
-  const getFilteredData = () => {
-    const now = new Date();
-    let startDate: Date;
-
-    switch (selectedPeriod) {
-      case '1W':
-        startDate = subWeeks(now, 1);
-        break;
-      case '1M':
-        startDate = subMonths(now, 1);
-        break;
-      case '3M':
-        startDate = subMonths(now, 3);
-        break;
-      case '6M':
-        startDate = subMonths(now, 6);
-        break;
-      case '1Y':
-        startDate = subYears(now, 1);
-        break;
-      default:
-        startDate = subMonths(now, 3);
-    }
-
-    return dailyPnL.filter((item) => {
-      const [day, month] = item.date.split('/').map(Number);
-      const itemDate = new Date(2025, month - 1, day);
-      return isAfter(itemDate, startDate);
-    });
-  };
-
-  const filteredData = getFilteredData();
+  const filteredData = filterByPeriod(dailyPnL, selectedPeriod);
   const totalPnL = filteredData.reduce((acc, curr) => acc + curr.pnl, 0);
   const isPositive = totalPnL >= 0;
+
+  if (!hasData) {
+    return (
+      <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
+              {selectedBanca && (
+                <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                  {selectedBanca.name}
+                </span>
+              )}
+            </div>
+            <p className="text-2xl font-bold mt-1">R$ 0,00</p>
+          </div>
+        </div>
+        <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+          <p>Importe entradas para visualizar o gráfico</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
@@ -65,7 +56,7 @@ export function DailyPnLChart() {
         <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
           isPositive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
         }`}>
-          {isPositive ? '+' : '-'}{((Math.abs(totalPnL) / 10000) * 100).toFixed(1)}%
+          {isPositive ? '+' : '-'}{Math.abs(totalPnL).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
         </div>
       </div>
 
