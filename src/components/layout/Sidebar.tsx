@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logo from '@/assets/logo.png';
 
 interface NavItem {
   icon: React.ElementType;
@@ -41,8 +42,8 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-card border-r border-border flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-[72px] border-b border-border">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-          <Trophy className="w-5 h-5 text-primary-foreground" />
+        <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+          <img src={logo} alt="Hyper Bets Logo" className="w-full h-full object-cover" />
         </div>
         <div className="flex-1">
           <h1 className="font-semibold text-sm text-foreground">Hyper Bets</h1>
