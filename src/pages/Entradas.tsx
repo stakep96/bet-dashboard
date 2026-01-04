@@ -13,36 +13,60 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Filter, Download, Plus, Upload } from 'lucide-react';
+import { Search, Filter, Download, Plus, Upload, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
 import { useBanca, Entrada } from '@/contexts/BancaContext';
 
-const parseCSVLine = (line: string): string[] => {
-  const result: string[] = [];
-  let current = '';
+// Parser CSV que respeita campos com aspas e quebras de linha internas
+const parseCSV = (content: string): string[][] => {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = '';
   let inQuotes = false;
   
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    const nextChar = content[i + 1];
     
     if (char === '"') {
-      inQuotes = !inQuotes;
+      if (inQuotes && nextChar === '"') {
+        // Aspas escapadas
+        currentField += '"';
+        i++;
+      } else {
+        // Toggle estado de aspas
+        inQuotes = !inQuotes;
+      }
     } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
+      currentRow.push(currentField.trim());
+      currentField = '';
+    } else if ((char === '\n' || (char === '\r' && nextChar === '\n')) && !inQuotes) {
+      currentRow.push(currentField.trim());
+      if (currentRow.some(field => field !== '')) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentField = '';
+      if (char === '\r') i++; // Pular \n após \r
+    } else if (char !== '\r') {
+      currentField += char;
     }
   }
-  result.push(current.trim());
   
-  return result;
+  // Última linha
+  if (currentField || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.some(field => field !== '')) {
+      rows.push(currentRow);
+    }
+  }
+  
+  return rows;
 };
 
 const parseMoneyValue = (value: string): number => {
   if (!value) return 0;
-  // Remove "R$", espaços e troca vírgula por ponto
   const cleaned = value
     .replace(/R\$\s*/g, '')
     .replace(/\./g, '')
@@ -68,6 +92,7 @@ const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' => {
 
 const Entradas = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
+  const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { getEntradasByBanca, addEntradas, selectedBanca } = useBanca();
@@ -91,34 +116,37 @@ const Entradas = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      const lines = content.split('\n').filter(line => line.trim());
+      const rows = parseCSV(content);
       
-      if (lines.length <= 1) {
+      if (rows.length <= 1) {
         toast.error('O arquivo CSV está vazio ou contém apenas cabeçalho.');
         return;
       }
 
-      // Pular cabeçalho e processar linhas
+      // Pular cabeçalho (primeira linha) e processar restante
       const novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[] = [];
       
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i]);
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
         
-        // Formato esperado: Data, Modalidade, Data do evento, Partida/Confronto, Mercado, Entrada, Odd, Stake, Resultado, G/P, PRÉ/LIVE, Site
+        // Formato: Data, Modalidade, Data do evento, Partida/Confronto, Mercado, Entrada, Odd, Stake, Resultado, G/P, PRÉ/LIVE, Site
         if (cols.length >= 10) {
+          // Limpar quebras de linha internas dos campos
+          const cleanField = (field: string) => field?.replace(/\s*\n\s*/g, ' ').trim() || '';
+          
           novasEntradas.push({
-            data: cols[0] || '',
-            modalidade: cols[1] || '',
-            dataEvento: cols[2] || '',
-            evento: cols[3] || '',
-            mercado: cols[4] || '',
-            entrada: cols[5] || '',
+            data: cleanField(cols[0]),
+            modalidade: cleanField(cols[1]),
+            dataEvento: cleanField(cols[2]),
+            evento: cleanField(cols[3]),
+            mercado: cleanField(cols[4]),
+            entrada: cleanField(cols[5]),
             odd: parseOdd(cols[6]),
             stake: parseMoneyValue(cols[7]),
             resultado: mapResultado(cols[8]),
             lucro: parseMoneyValue(cols[9]),
-            timing: cols[10]?.trim() || 'PRÉ',
-            site: cols[11]?.trim() || '',
+            timing: cleanField(cols[10]) || 'PRÉ',
+            site: cleanField(cols[11]),
           });
         }
       }
@@ -139,6 +167,12 @@ const Entradas = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleEditEntrada = (entrada: Entrada) => {
+    setEditingEntrada(entrada);
+    // TODO: Abrir modal de edição
+    toast.info(`Editar entrada: ${entrada.evento}`);
   };
 
   const filteredEntradas = entradasDaBanca.filter(entrada =>
@@ -247,6 +281,7 @@ const Entradas = () => {
                       <TableHead className="text-center">Resultado</TableHead>
                       <TableHead className="text-right">Lucro/Perda</TableHead>
                       <TableHead>Site</TableHead>
+                      <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -273,6 +308,16 @@ const Entradas = () => {
                           {entrada.lucro >= 0 ? '+' : ''}R$ {entrada.lucro.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{entrada.site}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => handleEditEntrada(entrada)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
