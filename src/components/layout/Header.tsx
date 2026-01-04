@@ -50,16 +50,6 @@ export function Header({ onNewEntry }: HeaderProps) {
     <header className="h-[72px] bg-card border-b border-border flex items-center justify-between px-6">
       {/* Welcome + Banca Selector */}
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-            <span className="text-sm font-semibold text-white">JB</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">João Bets</h2>
-            <p className="text-sm text-muted-foreground">Bem-vindo de volta! 🎯</p>
-          </div>
-        </div>
-
         {/* Banca Selector */}
         <Select value={selectedBanca?.id || ''} onValueChange={handleBancaChange}>
           <SelectTrigger className="w-[160px] bg-transparent border-border text-foreground">
