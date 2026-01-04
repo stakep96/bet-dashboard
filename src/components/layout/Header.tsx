@@ -7,7 +7,7 @@ interface HeaderProps {
 
 export function Header({ onNewEntry }: HeaderProps) {
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
+    <header className="h-[72px] bg-card border-b border-border flex items-center justify-between px-6">
       {/* Welcome */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
