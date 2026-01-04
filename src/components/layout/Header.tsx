@@ -7,6 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 
 interface HeaderProps {
@@ -16,17 +25,24 @@ interface HeaderProps {
 export function Header({ onNewEntry }: HeaderProps) {
   const [selectedBanca, setSelectedBanca] = useState('2024');
   const [bancas, setBancas] = useState(['2024', '2025', '2026']);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newBancaName, setNewBancaName] = useState('');
 
   const handleBancaChange = (value: string) => {
     if (value === 'new') {
-      // Criar nova banca com próximo ano
-      const years = bancas.map(b => parseInt(b)).filter(n => !isNaN(n));
-      const nextYear = Math.max(...years) + 1;
-      const newBanca = nextYear.toString();
-      setBancas([...bancas, newBanca]);
-      setSelectedBanca(newBanca);
+      setNewBancaName('');
+      setIsDialogOpen(true);
     } else {
       setSelectedBanca(value);
+    }
+  };
+
+  const handleCreateBanca = () => {
+    if (newBancaName.trim()) {
+      setBancas([...bancas, newBancaName.trim()]);
+      setSelectedBanca(newBancaName.trim());
+      setIsDialogOpen(false);
+      setNewBancaName('');
     }
   };
 
@@ -91,6 +107,35 @@ export function Header({ onNewEntry }: HeaderProps) {
           Cadastrar Entrada
         </Button>
       </div>
+
+      {/* Modal Nova Banca */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Nova Banca</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="banca-name">Nome da banca</Label>
+              <Input
+                id="banca-name"
+                value={newBancaName}
+                onChange={(e) => setNewBancaName(e.target.value)}
+                placeholder="Ex: 2025, Futebol, Esports..."
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateBanca()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateBanca} disabled={!newBancaName.trim()}>
+              Criar Banca
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
