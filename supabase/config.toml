@@ -1,0 +1,4 @@
+project_id = "kedsgseffxibdvemgepy"
+
+[functions.extract-bet-from-image]
+verify_jwt = false
