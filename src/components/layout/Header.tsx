@@ -66,7 +66,7 @@ export function Header({ onNewEntry }: HeaderProps) {
         {/* Banca Selector */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-[180px] justify-between bg-transparent border-border text-foreground">
+            <Button variant="outline" className="w-[180px] justify-between bg-transparent border-border text-foreground hover:bg-transparent">
               <div className="flex items-center gap-2">
                 {isVisaoGeral ? (
                   <Eye className="w-4 h-4 text-primary" />
