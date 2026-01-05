@@ -34,7 +34,7 @@ Analise a imagem do bilhete e extraia TODAS as apostas contidas nele. Isso inclu
 Para CADA aposta/seleção encontrada, extraia:
 - match: Nome da partida/confronto (ex: "Flamengo x Palmeiras")
 - modality: Modalidade do esporte (FUTEBOL, BASQUETE, TÊNIS, MMA, ESPORTS, OUTRO)
-- market: Tipo de mercado apostado (ex: "Resultado final", "Total gols", "Ambas marcam", etc)
+- market: Tipo de mercado apostado. IMPORTANTE: Se o mercado for "1x2" ou "1X2", converta para "Vencedor"
 - entry: A entrada/seleção feita (ex: "Vitória do Flamengo", "Acima de 2.5 gols")
 - odd: O valor da odd INDIVIDUAL desta seleção (número decimal, ex: 1.85). Se não visível, use null.
 - eventDate: Data do evento (formato YYYY-MM-DD)
