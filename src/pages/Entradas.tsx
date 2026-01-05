@@ -441,22 +441,24 @@ const Entradas = () => {
               return 'Pendente';
             };
 
-            await addEntradas([
-              {
-                data: toISODate(data?.createdAt),
-                dataEvento: toISODate(data?.eventDate),
-                modalidade: (data?.modality || 'OUTRO') as string,
-                evento: String(data?.match || ''),
-                mercado: String(data?.market || ''),
-                entrada: String(data?.entry || ''),
-                odd: Number(data?.odd || 0),
-                stake: Number(data?.stake || 0),
-                resultado: mapRes(data?.result),
-                lucro: Number(data?.profitLoss || 0),
-                timing: String(data?.timing || 'PRÉ'),
-                site: String(data?.bookmaker || ''),
-              },
-            ]);
+            const mapEntry = (item: any) => ({
+              data: toISODate(item?.createdAt),
+              dataEvento: toISODate(item?.eventDate),
+              modalidade: (item?.modality || 'OUTRO') as string,
+              evento: String(item?.match || ''),
+              mercado: String(item?.market || ''),
+              entrada: String(item?.entry || ''),
+              odd: Number(item?.odd || 0),
+              stake: Number(item?.stake || 0),
+              resultado: mapRes(item?.result),
+              lucro: Number(item?.profitLoss || 0),
+              timing: String(item?.timing || 'PRÉ'),
+              site: String(item?.bookmaker || ''),
+            });
+
+            // Handle array of entries (combined bets) or single entry
+            const entries = Array.isArray(data) ? data.map(mapEntry) : [mapEntry(data)];
+            await addEntradas(entries);
 
             return true;
           }}
