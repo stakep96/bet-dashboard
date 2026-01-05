@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +25,7 @@ interface BancaToEdit {
 }
 
 const Banca = () => {
-  const { bancas, selectedBanca, setSelectedBanca, addBanca, editBanca } = useBanca();
+  const { bancas, entradas, selectedBanca, setSelectedBanca, addBanca, editBanca } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
   const [newBancaBalance, setNewBancaBalance] = useState('');
@@ -62,6 +62,18 @@ const Banca = () => {
       setBancaToEdit(null);
     }
   };
+
+  const bancaAggregates = useMemo(() => {
+    const pnlByBancaId = new Map<string, number>();
+    const countByBancaId = new Map<string, number>();
+
+    for (const e of entradas) {
+      pnlByBancaId.set(e.bancaId, (pnlByBancaId.get(e.bancaId) || 0) + (e.lucro || 0));
+      countByBancaId.set(e.bancaId, (countByBancaId.get(e.bancaId) || 0) + 1);
+    }
+
+    return { pnlByBancaId, countByBancaId };
+  }, [entradas]);
 
   // Mock transaction history
   const transactions = [
@@ -148,24 +160,36 @@ const Banca = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-foreground">
-                    R$ {banca.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    Inicial: R$ {banca.initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </div>
                   {(() => {
-                    const roi = banca.initialBalance > 0 
-                      ? ((banca.balance - banca.initialBalance) / banca.initialBalance) * 100 
-                      : 0;
+                    const entriesCount = bancaAggregates.countByBancaId.get(banca.id) || 0;
+                    const pnlFromEntries = bancaAggregates.pnlByBancaId.get(banca.id) || 0;
+
+                    const currentBankroll = entriesCount > 0
+                      ? banca.initialBalance + pnlFromEntries
+                      : banca.balance;
+
+                    const totalPnL = entriesCount > 0
+                      ? pnlFromEntries
+                      : banca.balance - banca.initialBalance;
+
+                    const roi = banca.initialBalance > 0 ? (totalPnL / banca.initialBalance) * 100 : 0;
                     const isPositive = roi >= 0;
+
                     return (
-                      <div className="flex items-center gap-2 mt-2">
-                        <TrendingUp className={`h-4 w-4 ${isPositive ? 'text-green-500' : 'text-red-500'}`} />
-                        <span className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                          {isPositive ? '+' : ''}{roi.toFixed(2)}% ROI
-                        </span>
-                      </div>
+                      <>
+                        <div className="text-2xl font-bold text-foreground">
+                          R$ {currentBankroll.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Inicial: R$ {banca.initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <TrendingUp className={`h-4 w-4 ${isPositive ? 'text-green-500' : 'text-red-500'}`} />
+                          <span className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                            {isPositive ? '+' : ''}{roi.toFixed(2)}% ROI
+                          </span>
+                        </div>
+                      </>
                     );
                   })()}
                   {selectedBanca?.id === banca.id && (
