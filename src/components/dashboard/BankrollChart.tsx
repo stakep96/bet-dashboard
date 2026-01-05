@@ -1,9 +1,28 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useBanca } from '@/contexts/BancaContext';
 import { useDashboardMetrics, filterByPeriod } from '@/hooks/useDashboardMetrics';
+import { format, parse, isValid } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type Period = '1D' | '1W' | '1M' | '3M' | '1Y';
+
+// Helper to parse date string to Date object
+const parseChartDate = (dateStr: string): Date | null => {
+  // Try dd/MM format first
+  let parsed = parse(dateStr, 'dd/MM', new Date());
+  if (isValid(parsed)) return parsed;
+  
+  // Try dd/MM/yyyy
+  parsed = parse(dateStr, 'dd/MM/yyyy', new Date());
+  if (isValid(parsed)) return parsed;
+  
+  // Try ISO format
+  parsed = new Date(dateStr);
+  if (isValid(parsed)) return parsed;
+  
+  return null;
+};
 
 export function BankrollChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
@@ -13,13 +32,44 @@ export function BankrollChart() {
   // Filter data based on selected period
   const filteredHistory = filterByPeriod(bankrollHistory, selectedPeriod);
 
+  // Aggregate data by month
+  const monthlyData = useMemo(() => {
+    const monthMap = new Map<string, { value: number; change: number; label: string }>();
+    
+    filteredHistory.forEach((item) => {
+      const date = parseChartDate(item.date);
+      if (!date) return;
+      
+      const monthKey = format(date, 'yyyy-MM');
+      const monthLabel = format(date, 'MMM/yy', { locale: ptBR });
+      
+      if (monthMap.has(monthKey)) {
+        const existing = monthMap.get(monthKey)!;
+        existing.change += item.change;
+        existing.value = item.value; // Take the last value of the month
+      } else {
+        monthMap.set(monthKey, {
+          value: item.value,
+          change: item.change,
+          label: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+        });
+      }
+    });
+    
+    return Array.from(monthMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, data]) => data);
+  }, [filteredHistory]);
+
   // Transform data for waterfall chart
-  const chartData = filteredHistory.map((item, index) => {
-    const prevValue = index > 0 ? filteredHistory[index - 1].value : 0;
+  const chartData = monthlyData.map((item, index) => {
+    const prevValue = index > 0 ? monthlyData[index - 1].value : 0;
     const isPositive = item.change >= 0;
     
     return {
-      ...item,
+      date: item.label,
+      value: item.value,
+      change: item.change,
       base: isPositive ? prevValue : item.value,
       barHeight: Math.abs(item.change),
       isPositive,
@@ -27,8 +77,8 @@ export function BankrollChart() {
   });
 
   // Calculate current value and growth
-  const currentValue = filteredHistory.length > 0 ? filteredHistory[filteredHistory.length - 1].value : 0;
-  const initialValue = filteredHistory.length > 0 ? filteredHistory[0].value - (filteredHistory[0].change || 0) : 0;
+  const currentValue = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].value : 0;
+  const initialValue = monthlyData.length > 0 ? monthlyData[0].value - (monthlyData[0].change || 0) : 0;
   const growthPercent = initialValue > 0 ? ((currentValue - initialValue) / initialValue * 100).toFixed(0) : 0;
 
   if (!hasData) {
@@ -115,11 +165,9 @@ export function BankrollChart() {
               dataKey="date" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
               interval={0}
-              angle={-45}
-              textAnchor="end"
-              height={45}
+              height={30}
             />
             <YAxis 
               axisLine={false} 
