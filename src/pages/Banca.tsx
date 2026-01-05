@@ -14,16 +14,26 @@ import {
   DialogFooter,
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { Wallet, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, History } from 'lucide-react';
+import { Wallet, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, History, Pencil } from 'lucide-react';
 import { useBanca } from '@/contexts/BancaContext';
 
+interface BancaToEdit {
+  id: string;
+  name: string;
+  balance: number;
+}
+
 const Banca = () => {
-  const { bancas, selectedBanca, setSelectedBanca, addBanca } = useBanca();
+  const { bancas, selectedBanca, setSelectedBanca, addBanca, editBanca } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
   const [newBancaBalance, setNewBancaBalance] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [bancaToEdit, setBancaToEdit] = useState<BancaToEdit | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editBalance, setEditBalance] = useState('');
 
   const handleCreateBanca = () => {
     if (newBancaName.trim() && newBancaBalance) {
@@ -31,6 +41,22 @@ const Banca = () => {
       setIsDialogOpen(false);
       setNewBancaName('');
       setNewBancaBalance('');
+    }
+  };
+
+  const handleOpenEditDialog = (banca: BancaToEdit, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setBancaToEdit(banca);
+    setEditName(banca.name);
+    setEditBalance(banca.balance.toString());
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditBanca = () => {
+    if (bancaToEdit && editName.trim() && editBalance) {
+      editBanca(bancaToEdit.id, editName, parseFloat(editBalance) || 0);
+      setIsEditDialogOpen(false);
+      setBancaToEdit(null);
     }
   };
 
@@ -106,7 +132,17 @@ const Banca = () => {
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">{banca.name}</CardTitle>
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => handleOpenEditDialog(banca, e)}
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-foreground">
@@ -125,6 +161,40 @@ const Banca = () => {
               </Card>
             ))}
           </div>
+
+          {/* Edit Banca Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar Banca</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-name">Nome da Banca</Label>
+                  <Input 
+                    id="edit-name" 
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Ex: 2025, Futebol, Esports..."
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-balance">Valor (R$)</Label>
+                  <Input 
+                    id="edit-balance" 
+                    type="number"
+                    value={editBalance}
+                    onChange={(e) => setEditBalance(e.target.value)}
+                    placeholder="Ex: 1000"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleEditBanca} disabled={!editName.trim() || !editBalance}>Salvar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
