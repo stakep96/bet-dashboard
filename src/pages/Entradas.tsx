@@ -81,13 +81,14 @@ const parseOdd = (value: string): number => {
   return parseFloat(cleaned) || 0;
 };
 
-const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' => {
+const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' | 'Pendente' => {
   const upper = value?.toUpperCase().trim();
+  if (!upper || upper === '') return 'Pendente';
   if (upper === 'G' || upper === 'GREEN' || upper === 'GANHOU') return 'G';
   if (upper === 'P' || upper === 'RED' || upper === 'PERDEU') return 'P';
   if (upper === 'C' || upper === 'CASHOUT' || upper === 'CASH') return 'C';
   if (upper === 'D' || upper === 'DEVOLVIDA' || upper === 'DEV') return 'D';
-  return 'P';
+  return 'Pendente';
 };
 
 const Entradas = () => {
@@ -187,7 +188,8 @@ const Entradas = () => {
       case 'P': return 'Perdeu';
       case 'C': return 'Cashout';
       case 'D': return 'Devolvida';
-      default: return resultado;
+      case 'Pendente': return 'Pendente';
+      default: return 'Pendente';
     }
   };
 
@@ -197,7 +199,8 @@ const Entradas = () => {
       case 'P': return 'bg-red-500/10 text-red-500 hover:bg-red-500/20';
       case 'C': return 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20';
       case 'D': return 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20';
-      default: return '';
+      case 'Pendente': return 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20';
+      default: return 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20';
     }
   };
 
@@ -276,6 +279,7 @@ const Entradas = () => {
                       <TableHead>Modalidade</TableHead>
                       <TableHead>Evento</TableHead>
                       <TableHead>Mercado</TableHead>
+                      <TableHead>Entrada</TableHead>
                       <TableHead className="text-center">Odd</TableHead>
                       <TableHead className="text-right">Stake</TableHead>
                       <TableHead className="text-center">Resultado</TableHead>
@@ -296,6 +300,9 @@ const Entradas = () => {
                         </TableCell>
                         <TableCell className="max-w-[150px] truncate" title={entrada.mercado}>
                           {entrada.mercado}
+                        </TableCell>
+                        <TableCell className="max-w-[120px] truncate" title={entrada.entrada}>
+                          {entrada.entrada || '-'}
                         </TableCell>
                         <TableCell className="text-center">{entrada.odd.toFixed(2)}</TableCell>
                         <TableCell className="text-right">R$ {entrada.stake.toFixed(2)}</TableCell>
