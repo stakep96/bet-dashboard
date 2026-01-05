@@ -226,9 +226,11 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     // For combined bets, merge all selections into a single entry
     if (betType === 'combined' && selections.length > 1) {
       // Combine event names
-      const combinedEvent = selections.map(s => s.match).filter(Boolean).join(' + ');
+      const combinedEvent = selections.map(s => s.match).filter(Boolean).join(' | ');
       // Combine markets
       const combinedMarket = selections.map(s => s.market).filter(Boolean).join(' | ');
+      // Combine entries (the actual bet description like "GAM Esports (-1.5)")
+      const combinedEntry = selections.map(s => s.entry).filter(Boolean).join(' | ');
       // Use first selection's modality or 'OUTRO'
       const modality = selections[0]?.modality || 'OUTRO';
 
@@ -239,7 +241,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
         modality,
         match: combinedEvent,
         market: combinedMarket,
-        entry: `Múltipla (${selections.length} seleções)`,
+        entry: combinedEntry,
         odd: totalOdd,
         stake,
         result: generalData.result,
