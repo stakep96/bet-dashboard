@@ -14,7 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bancas: {
+        Row: {
+          created_at: string
+          current_balance: number
+          id: string
+          initial_balance: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number
+          id?: string
+          initial_balance?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          id?: string
+          initial_balance?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      entradas: {
+        Row: {
+          banca_id: string
+          bet_type: string | null
+          betting_house: string | null
+          created_at: string
+          date: string
+          event: string
+          id: string
+          market: string | null
+          modality: string
+          odd: number | null
+          profit: number
+          result: string
+          stake: number
+          timing: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          banca_id: string
+          bet_type?: string | null
+          betting_house?: string | null
+          created_at?: string
+          date: string
+          event: string
+          id?: string
+          market?: string | null
+          modality: string
+          odd?: number | null
+          profit?: number
+          result?: string
+          stake?: number
+          timing?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          banca_id?: string
+          bet_type?: string | null
+          betting_house?: string | null
+          created_at?: string
+          date?: string
+          event?: string
+          id?: string
+          market?: string | null
+          modality?: string
+          odd?: number | null
+          profit?: number
+          result?: string
+          stake?: number
+          timing?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entradas_banca_id_fkey"
+            columns: ["banca_id"]
+            isOneToOne: false
+            referencedRelation: "bancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

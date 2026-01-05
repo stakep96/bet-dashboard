@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,12 +13,14 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Filter, Download, Plus, Upload, Pencil } from 'lucide-react';
+import { Search, Download, Plus, Upload, Pencil, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
+import { EditEntradaModal } from '@/components/forms/EditEntradaModal';
+import { EntradasFilter, FilterState } from '@/components/filters/EntradasFilter';
 import { useBanca, Entrada } from '@/contexts/BancaContext';
+import { useExportCSV } from '@/hooks/useExportCSV';
 
-// Parser CSV que respeita campos com aspas e quebras de linha internas
 const parseCSV = (content: string): string[][] => {
   const rows: string[][] = [];
   let currentRow: string[] = [];
@@ -31,11 +33,9 @@ const parseCSV = (content: string): string[][] => {
     
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
-        // Aspas escapadas
         currentField += '"';
         i++;
       } else {
-        // Toggle estado de aspas
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
@@ -48,13 +48,12 @@ const parseCSV = (content: string): string[][] => {
       }
       currentRow = [];
       currentField = '';
-      if (char === '\r') i++; // Pular \n após \r
+      if (char === '\r') i++;
     } else if (char !== '\r') {
       currentField += char;
     }
   }
   
-  // Última linha
   if (currentField || currentRow.length > 0) {
     currentRow.push(currentField.trim());
     if (currentRow.some(field => field !== '')) {
@@ -67,18 +66,13 @@ const parseCSV = (content: string): string[][] => {
 
 const parseMoneyValue = (value: string): number => {
   if (!value) return 0;
-  const cleaned = value
-    .replace(/R\$\s*/g, '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-    .trim();
+  const cleaned = value.replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.').trim();
   return parseFloat(cleaned) || 0;
 };
 
 const parseOdd = (value: string): number => {
   if (!value) return 0;
-  const cleaned = value.replace(',', '.').trim();
-  return parseFloat(cleaned) || 0;
+  return parseFloat(value.replace(',', '.').trim()) || 0;
 };
 
 const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' | 'Pendente' => {
@@ -95,10 +89,86 @@ const Entradas = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
   const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<FilterState>({
+    dateFrom: undefined,
+    dateTo: undefined,
+    resultado: '',
+    modalidade: '',
+    mercado: '',
+    site: '',
+    sortBy: 'data',
+    sortOrder: 'desc',
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { getEntradasByBanca, addEntradas, selectedBancaIds, bancas, isVisaoGeral } = useBanca();
+  const { 
+    getEntradasByBanca, 
+    addEntradas, 
+    updateEntrada, 
+    deleteEntrada,
+    selectedBancaIds, 
+    bancas, 
+    isVisaoGeral,
+    loading 
+  } = useBanca();
+  const { exportToCSV } = useExportCSV();
   
   const entradasDaBanca = getEntradasByBanca();
+
+  // Get unique values for filters
+  const modalidades = useMemo(() => [...new Set(entradasDaBanca.map(e => e.modalidade).filter(Boolean))], [entradasDaBanca]);
+  const mercados = useMemo(() => [...new Set(entradasDaBanca.map(e => e.mercado).filter(Boolean))], [entradasDaBanca]);
+  const sites = useMemo(() => [...new Set(entradasDaBanca.map(e => e.site).filter(Boolean))], [entradasDaBanca]);
+
+  // Apply filters and sorting
+  const filteredEntradas = useMemo(() => {
+    let result = entradasDaBanca.filter(entrada =>
+      entrada.evento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entrada.mercado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entrada.modalidade.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Apply filters
+    if (filters.dateFrom) {
+      result = result.filter(e => new Date(e.data) >= filters.dateFrom!);
+    }
+    if (filters.dateTo) {
+      result = result.filter(e => new Date(e.data) <= filters.dateTo!);
+    }
+    if (filters.resultado) {
+      result = result.filter(e => e.resultado === filters.resultado);
+    }
+    if (filters.modalidade) {
+      result = result.filter(e => e.modalidade === filters.modalidade);
+    }
+    if (filters.mercado) {
+      result = result.filter(e => e.mercado === filters.mercado);
+    }
+    if (filters.site) {
+      result = result.filter(e => e.site === filters.site);
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (filters.sortBy) {
+        case 'data':
+          comparison = new Date(a.data).getTime() - new Date(b.data).getTime();
+          break;
+        case 'lucro':
+          comparison = a.lucro - b.lucro;
+          break;
+        case 'stake':
+          comparison = a.stake - b.stake;
+          break;
+        case 'odd':
+          comparison = a.odd - b.odd;
+          break;
+      }
+      return filters.sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return result;
+  }, [entradasDaBanca, searchTerm, filters]);
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,7 +186,7 @@ const Entradas = () => {
 
     const selectedBanca = bancas.find(b => b.id === selectedBancaIds[0]);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target?.result as string;
       const rows = parseCSV(content);
       
@@ -125,15 +195,12 @@ const Entradas = () => {
         return;
       }
 
-      // Pular cabeçalho (primeira linha) e processar restante
       const novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[] = [];
       
       for (let i = 1; i < rows.length; i++) {
         const cols = rows[i];
         
-        // Formato: Data, Modalidade, Data do evento, Partida/Confronto, Mercado, Entrada, Odd, Stake, Resultado, G/P, PRÉ/LIVE, Site
         if (cols.length >= 10) {
-          // Limpar quebras de linha internas dos campos
           const cleanField = (field: string) => field?.replace(/\s*\n\s*/g, ' ').trim() || '';
           
           novasEntradas.push({
@@ -158,8 +225,8 @@ const Entradas = () => {
         return;
       }
 
-      addEntradas(novasEntradas);
-      toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca.name}"!`);
+      await addEntradas(novasEntradas);
+      toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca?.name}"!`);
     };
     reader.onerror = () => {
       toast.error('Erro ao ler o arquivo CSV.');
@@ -171,17 +238,18 @@ const Entradas = () => {
     }
   };
 
-  const handleEditEntrada = (entrada: Entrada) => {
-    setEditingEntrada(entrada);
-    // TODO: Abrir modal de edição
-    toast.info(`Editar entrada: ${entrada.evento}`);
+  const handleExport = () => {
+    const selectedBanca = bancas.find(b => b.id === selectedBancaIds[0]);
+    const result = exportToCSV(filteredEntradas, {
+      bancaName: isVisaoGeral ? 'visao_geral' : selectedBanca?.name,
+    });
+    
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
   };
-
-  const filteredEntradas = entradasDaBanca.filter(entrada =>
-    entrada.evento.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entrada.mercado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entrada.modalidade.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getResultadoLabel = (resultado: string) => {
     switch (resultado) {
@@ -205,6 +273,14 @@ const Entradas = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -217,7 +293,7 @@ const Entradas = () => {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Entradas</h1>
               <p className="text-muted-foreground">
-                {isVisaoGeral ? 'Visão Geral - Todas as bancas' : `Banca "${bancas.find(b => b.id === selectedBancaIds[0])?.name || ''}"`} ({entradasDaBanca.length} entradas)
+                {isVisaoGeral ? 'Visão Geral - Todas as bancas' : `Banca "${bancas.find(b => b.id === selectedBancaIds[0])?.name || ''}"`} ({filteredEntradas.length} entradas)
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -257,10 +333,14 @@ const Entradas = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon">
+                  <EntradasFilter
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    modalidades={modalidades}
+                    mercados={mercados}
+                    sites={sites}
+                  />
+                  <Button variant="outline" size="icon" onClick={handleExport}>
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -321,7 +401,7 @@ const Entradas = () => {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8"
-                            onClick={() => handleEditEntrada(entrada)}
+                            onClick={() => setEditingEntrada(entrada)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -339,7 +419,7 @@ const Entradas = () => {
       {showNewBetForm && (
         <NewBetForm 
           onClose={() => setShowNewBetForm(false)}
-          onSubmit={(data) => {
+          onSubmit={async (data) => {
             if (selectedBancaIds.length !== 1) {
               toast.error('Selecione apenas uma banca para cadastrar a entrada.');
               return false;
@@ -352,7 +432,7 @@ const Entradas = () => {
               return d.toISOString().split('T')[0];
             };
 
-            const mapResultado = (value: any): Entrada['resultado'] => {
+            const mapRes = (value: any): Entrada['resultado'] => {
               const v = String(value || '').toUpperCase().trim();
               if (v === 'GREEN' || v === 'G') return 'G';
               if (v === 'RED' || v === 'P') return 'P';
@@ -361,7 +441,7 @@ const Entradas = () => {
               return 'Pendente';
             };
 
-            addEntradas([
+            await addEntradas([
               {
                 data: toISODate(data?.createdAt),
                 dataEvento: toISODate(data?.eventDate),
@@ -371,7 +451,7 @@ const Entradas = () => {
                 entrada: String(data?.entry || ''),
                 odd: Number(data?.odd || 0),
                 stake: Number(data?.stake || 0),
-                resultado: mapResultado(data?.result),
+                resultado: mapRes(data?.result),
                 lucro: Number(data?.profitLoss || 0),
                 timing: String(data?.timing || 'PRÉ'),
                 site: String(data?.bookmaker || ''),
@@ -380,6 +460,15 @@ const Entradas = () => {
 
             return true;
           }}
+        />
+      )}
+
+      {editingEntrada && (
+        <EditEntradaModal
+          entrada={editingEntrada}
+          onClose={() => setEditingEntrada(null)}
+          onSave={updateEntrada}
+          onDelete={deleteEntrada}
         />
       )}
     </div>

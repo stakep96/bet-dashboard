@@ -11,14 +11,14 @@ import { NewBetForm } from '@/components/forms/NewBetForm';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { useBanca, Entrada } from '@/contexts/BancaContext';
 import { toast } from 'sonner';
-import { Wallet, TrendingUp, Target, BarChart3 } from 'lucide-react';
+import { Wallet, TrendingUp, Target, BarChart3, Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
   const { metrics, hasData } = useDashboardMetrics();
-  const { addEntradas, selectedBancaIds } = useBanca();
+  const { addEntradas, selectedBancaIds, loading } = useBanca();
 
-  const handleNewBet = (data: any) => {
+  const handleNewBet = async (data: any) => {
     if (selectedBancaIds.length !== 1) {
       toast.error('Selecione apenas uma banca para cadastrar a entrada.');
       return false;
@@ -40,7 +40,7 @@ const Index = () => {
       return 'Pendente';
     };
 
-    addEntradas([
+    await addEntradas([
       {
         data: toISODate(data?.createdAt),
         dataEvento: toISODate(data?.eventDate),
@@ -59,6 +59,14 @@ const Index = () => {
 
     return true;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
