@@ -368,6 +368,7 @@ const Entradas = () => {
                   <TableHeader>
                     <TableRow className="text-xs">
                       <TableHead className="text-xs">Data</TableHead>
+                      <TableHead className="text-xs">Data Evento</TableHead>
                       <TableHead className="text-xs">Modalidade</TableHead>
                       <TableHead className="text-xs">Evento</TableHead>
                       <TableHead className="text-xs">Mercado</TableHead>
@@ -389,6 +390,7 @@ const Entradas = () => {
                       return (
                         <TableRow key={entrada.id} className="text-xs">
                           <TableCell className="text-muted-foreground text-xs py-2">{entrada.data}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs py-2">{entrada.dataEvento || '-'}</TableCell>
                           <TableCell className="py-2">
                             <Badge variant="outline" className="text-xs">{entrada.modalidade}</Badge>
                           </TableCell>
