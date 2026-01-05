@@ -147,12 +147,23 @@ const Entradas = () => {
       result = result.filter(e => e.site === filters.site);
     }
 
-    // Apply sorting
+    // Apply sorting: Pending entries always on top, then sort by event date
     result.sort((a, b) => {
+      // Pending entries first
+      const aIsPending = a.resultado === 'Pendente';
+      const bIsPending = b.resultado === 'Pendente';
+      
+      if (aIsPending && !bIsPending) return -1;
+      if (!aIsPending && bIsPending) return 1;
+      
+      // Then apply the selected sort
       let comparison = 0;
       switch (filters.sortBy) {
         case 'data':
-          comparison = new Date(a.data).getTime() - new Date(b.data).getTime();
+          // Sort by event date instead of registration date
+          const aEventDate = a.dataEvento || a.data;
+          const bEventDate = b.dataEvento || b.data;
+          comparison = new Date(aEventDate).getTime() - new Date(bEventDate).getTime();
           break;
         case 'lucro':
           comparison = a.lucro - b.lucro;

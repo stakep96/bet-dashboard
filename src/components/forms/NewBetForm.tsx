@@ -63,6 +63,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
   
   const [generalData, setGeneralData] = useState({
     createdAt: new Date().toISOString().split('T')[0],
+    eventDate: new Date().toISOString().split('T')[0],
     stake: '',
     result: 'PENDING' as BetResult,
     bookmaker: '',
@@ -237,7 +238,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
       const ok = await onSubmit({
         id: Date.now().toString(),
         createdAt: new Date(generalData.createdAt),
-        eventDate: new Date(selections[0]?.eventDate || generalData.createdAt),
+        eventDate: new Date(generalData.eventDate),
         modality,
         match: combinedEvent,
         market: combinedMarket,
@@ -557,7 +558,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
           <div className="space-y-4 pt-2 border-t border-border">
             <Label className="text-base">Dados Gerais do Bilhete</Label>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Data do Cadastro</Label>
                 <Input 
@@ -567,7 +568,18 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              {betType === 'combined' && (
+                <div className="space-y-2">
+                  <Label>Data do Evento</Label>
+                  <Input 
+                    type="date"
+                    value={generalData.eventDate}
+                    onChange={(e) => setGeneralData({ ...generalData, eventDate: e.target.value })}
+                    required
+                  />
+                </div>
+              )}
+              <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
                 <Label>Casa de Apostas</Label>
                 <Select 
                   value={generalData.bookmaker} 
