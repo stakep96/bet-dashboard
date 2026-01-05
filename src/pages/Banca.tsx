@@ -21,14 +21,16 @@ const Banca = () => {
   const { bancas, selectedBanca, setSelectedBanca, addBanca } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
+  const [newBancaBalance, setNewBancaBalance] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
   const [isDepositOpen, setIsDepositOpen] = useState(false);
 
   const handleCreateBanca = () => {
-    if (newBancaName.trim()) {
-      addBanca(newBancaName);
+    if (newBancaName.trim() && newBancaBalance) {
+      addBanca(newBancaName, parseFloat(newBancaBalance) || 0);
       setIsDialogOpen(false);
       setNewBancaName('');
+      setNewBancaBalance('');
     }
   };
 
@@ -75,10 +77,20 @@ const Banca = () => {
                       placeholder="Ex: 2025, Futebol, Esports..."
                     />
                   </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="balance">Valor inicial (R$)</Label>
+                    <Input 
+                      id="balance" 
+                      type="number"
+                      value={newBancaBalance}
+                      onChange={(e) => setNewBancaBalance(e.target.value)}
+                      placeholder="Ex: 1000"
+                    />
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                  <Button onClick={handleCreateBanca}>Criar Banca</Button>
+                  <Button onClick={handleCreateBanca} disabled={!newBancaName.trim() || !newBancaBalance}>Criar Banca</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
