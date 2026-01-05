@@ -26,25 +26,55 @@ export interface Entrada {
 
 interface BancaContextType {
   bancas: Banca[];
-  selectedBanca: Banca | null;
-  setSelectedBanca: (banca: Banca) => void;
+  selectedBancaIds: string[]; // IDs das bancas selecionadas (pode ser múltiplas)
+  isVisaoGeral: boolean; // Se está na Visão Geral
+  setSelectedBancaIds: (ids: string[]) => void;
+  toggleBancaSelection: (id: string) => void;
+  selectSingleBanca: (id: string) => void;
+  enterVisaoGeral: () => void;
   addBanca: (name: string, initialBalance: number) => void;
   editBanca: (id: string, name: string, balance: number, initialBalance: number) => void;
   entradas: Entrada[];
   addEntradas: (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => void;
   getEntradasByBanca: () => Entrada[];
+  getSelectedBancas: () => Banca[];
+  getTotalBalance: () => number;
+  getTotalInitialBalance: () => number;
 }
 
 const BancaContext = createContext<BancaContextType | undefined>(undefined);
 
 export function BancaProvider({ children }: { children: ReactNode }) {
-  const [bancas, setBancas] = useState<Banca[]>([
-    { id: '1', name: '2024', balance: 8500, initialBalance: 5000 },
-    { id: '2', name: '2025', balance: 12350.75, initialBalance: 10000 },
-    { id: '3', name: 'Futebol', balance: 3200, initialBalance: 2000 },
-  ]);
-  const [selectedBanca, setSelectedBanca] = useState<Banca>(bancas[1]);
+  const [bancas, setBancas] = useState<Banca[]>([]);
+  const [selectedBancaIds, setSelectedBancaIds] = useState<string[]>([]); // Visão Geral = todas selecionadas
+  const [isVisaoGeral, setIsVisaoGeral] = useState(true); // Padrão é Visão Geral
   const [entradas, setEntradas] = useState<Entrada[]>([]);
+
+  const enterVisaoGeral = () => {
+    setIsVisaoGeral(true);
+    setSelectedBancaIds(bancas.map(b => b.id)); // Seleciona todas
+  };
+
+  const selectSingleBanca = (id: string) => {
+    setIsVisaoGeral(false);
+    setSelectedBancaIds([id]);
+  };
+
+  const toggleBancaSelection = (id: string) => {
+    if (!isVisaoGeral) {
+      // Se não está na visão geral, entra nela primeiro
+      setIsVisaoGeral(true);
+      setSelectedBancaIds(bancas.map(b => b.id));
+    }
+    
+    setSelectedBancaIds(prev => {
+      if (prev.includes(id)) {
+        const newIds = prev.filter(i => i !== id);
+        return newIds.length === 0 ? [id] : newIds; // Não permite deselecionar todas
+      }
+      return [...prev, id];
+    });
+  };
 
   const addBanca = (name: string, initialBalance: number) => {
     const newBanca: Banca = {
@@ -53,25 +83,27 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       balance: initialBalance,
       initialBalance: initialBalance,
     };
-    setBancas([...bancas, newBanca]);
-    setSelectedBanca(newBanca);
+    setBancas(prev => [...prev, newBanca]);
+    // Ao criar nova banca, seleciona apenas ela
+    setIsVisaoGeral(false);
+    setSelectedBancaIds([newBanca.id]);
   };
 
   const editBanca = (id: string, name: string, balance: number, initialBalance: number) => {
     setBancas(prev => prev.map(b => 
       b.id === id ? { ...b, name: name.trim(), balance, initialBalance } : b
     ));
-    if (selectedBanca?.id === id) {
-      setSelectedBanca({ ...selectedBanca, name: name.trim(), balance, initialBalance });
-    }
   };
+
   const addEntradas = (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => {
-    if (!selectedBanca) return;
+    // Só adiciona se tiver uma única banca selecionada
+    if (selectedBancaIds.length !== 1) return;
+    const bancaId = selectedBancaIds[0];
 
     const entradasComId: Entrada[] = novasEntradas.map((entrada, index) => ({
       ...entrada,
       id: `${Date.now()}-${index}`,
-      bancaId: selectedBanca.id,
+      bancaId: bancaId,
     }));
 
     const deltaBalance = entradasComId.reduce((acc, e) => acc + (e.lucro || 0), 0);
@@ -81,27 +113,45 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     // Atualiza o saldo atual da banca com base no lucro/prejuízo das novas entradas
     if (deltaBalance !== 0) {
       setBancas(prev =>
-        prev.map(b => (b.id === selectedBanca.id ? { ...b, balance: b.balance + deltaBalance } : b))
+        prev.map(b => (b.id === bancaId ? { ...b, balance: b.balance + deltaBalance } : b))
       );
-      setSelectedBanca(prev => ({ ...prev, balance: prev.balance + deltaBalance }));
     }
   };
 
   const getEntradasByBanca = (): Entrada[] => {
-    if (!selectedBanca) return [];
-    return entradas.filter(e => e.bancaId === selectedBanca.id);
+    if (selectedBancaIds.length === 0) return [];
+    return entradas.filter(e => selectedBancaIds.includes(e.bancaId));
+  };
+
+  const getSelectedBancas = (): Banca[] => {
+    return bancas.filter(b => selectedBancaIds.includes(b.id));
+  };
+
+  const getTotalBalance = (): number => {
+    return getSelectedBancas().reduce((acc, b) => acc + b.balance, 0);
+  };
+
+  const getTotalInitialBalance = (): number => {
+    return getSelectedBancas().reduce((acc, b) => acc + b.initialBalance, 0);
   };
 
   return (
     <BancaContext.Provider value={{ 
       bancas, 
-      selectedBanca, 
-      setSelectedBanca, 
+      selectedBancaIds,
+      isVisaoGeral,
+      setSelectedBancaIds, 
+      toggleBancaSelection,
+      selectSingleBanca,
+      enterVisaoGeral,
       addBanca,
       editBanca,
       entradas,
       addEntradas,
       getEntradasByBanca,
+      getSelectedBancas,
+      getTotalBalance,
+      getTotalInitialBalance,
     }}>
       {children}
     </BancaContext.Provider>

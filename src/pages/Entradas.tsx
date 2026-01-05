@@ -96,7 +96,7 @@ const Entradas = () => {
   const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { getEntradasByBanca, addEntradas, selectedBanca } = useBanca();
+  const { getEntradasByBanca, addEntradas, selectedBancaIds, bancas, isVisaoGeral } = useBanca();
   
   const entradasDaBanca = getEntradasByBanca();
 
@@ -109,11 +109,12 @@ const Entradas = () => {
       return;
     }
 
-    if (!selectedBanca) {
-      toast.error('Selecione uma banca antes de importar.');
+    if (selectedBancaIds.length !== 1) {
+      toast.error('Selecione apenas uma banca antes de importar.');
       return;
     }
 
+    const selectedBanca = bancas.find(b => b.id === selectedBancaIds[0]);
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
@@ -216,7 +217,7 @@ const Entradas = () => {
             <div>
               <h1 className="text-2xl font-bold text-foreground">Entradas</h1>
               <p className="text-muted-foreground">
-                Histórico de apostas da banca "{selectedBanca?.name}" ({entradasDaBanca.length} entradas)
+                {isVisaoGeral ? 'Visão Geral - Todas as bancas' : `Banca "${bancas.find(b => b.id === selectedBancaIds[0])?.name || ''}"`} ({entradasDaBanca.length} entradas)
               </p>
             </div>
             <div className="flex items-center gap-2">

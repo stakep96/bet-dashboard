@@ -1,12 +1,12 @@
-import { Search, Bell, Filter, Plus, Calendar, ChevronDown, Wallet } from 'lucide-react';
+import { Search, Bell, Filter, Plus, Calendar, ChevronDown, Wallet, Eye, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -16,29 +16,28 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useState } from 'react';
 import { useBanca } from '@/contexts/BancaContext';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onNewEntry: () => void;
 }
 
 export function Header({ onNewEntry }: HeaderProps) {
-  const { bancas, selectedBanca, setSelectedBanca, addBanca } = useBanca();
+  const { 
+    bancas, 
+    selectedBancaIds,
+    isVisaoGeral,
+    addBanca,
+    enterVisaoGeral,
+    selectSingleBanca,
+    toggleBancaSelection,
+  } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
   const [newBancaBalance, setNewBancaBalance] = useState('');
-
-  const handleBancaChange = (value: string) => {
-    if (value === 'new') {
-      setNewBancaName('');
-      setNewBancaBalance('');
-      setIsDialogOpen(true);
-    } else {
-      const banca = bancas.find(b => b.id === value);
-      if (banca) setSelectedBanca(banca);
-    }
-  };
 
   const handleCreateBanca = () => {
     if (newBancaName.trim() && newBancaBalance) {
@@ -49,30 +48,107 @@ export function Header({ onNewEntry }: HeaderProps) {
     }
   };
 
+  const getDisplayName = () => {
+    if (isVisaoGeral) {
+      return 'Visão Geral';
+    }
+    if (selectedBancaIds.length === 1) {
+      const banca = bancas.find(b => b.id === selectedBancaIds[0]);
+      return banca?.name || 'Selecionar';
+    }
+    return `${selectedBancaIds.length} bancas`;
+  };
+
   return (
     <header className="h-[72px] bg-card border-b border-border flex items-center justify-between px-6">
       {/* Welcome + Banca Selector */}
       <div className="flex items-center gap-6">
         {/* Banca Selector */}
-        <Select value={selectedBanca?.id || ''} onValueChange={handleBancaChange}>
-          <SelectTrigger className="w-[160px] bg-transparent border-border text-foreground">
-            <Wallet className="w-4 h-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Selecionar banca">
-              {selectedBanca?.name}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            {bancas.map((banca) => (
-              <SelectItem key={banca.id} value={banca.id}>{banca.name}</SelectItem>
-            ))}
-            <SelectItem value="new" className="text-primary pl-2 justify-center">
-              <span className="flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Adicionar banca
-              </span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-[180px] justify-between bg-transparent border-border text-foreground">
+              <div className="flex items-center gap-2">
+                {isVisaoGeral ? (
+                  <Eye className="w-4 h-4 text-primary" />
+                ) : (
+                  <Wallet className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className={cn(isVisaoGeral && "text-primary font-medium")}>
+                  {getDisplayName()}
+                </span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[220px] bg-card border-border" align="start">
+            {/* Visão Geral */}
+            <DropdownMenuItem 
+              onClick={enterVisaoGeral}
+              className={cn(
+                "flex items-center gap-2 cursor-pointer",
+                isVisaoGeral && "bg-primary/10 text-primary"
+              )}
+            >
+              <Eye className="w-4 h-4" />
+              <span className="font-medium">Visão Geral</span>
+              {isVisaoGeral && <Check className="w-4 h-4 ml-auto" />}
+            </DropdownMenuItem>
+
+            {bancas.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+
+                {/* Lista de Bancas */}
+                {bancas.map((banca) => {
+                  const isSelected = selectedBancaIds.includes(banca.id);
+                  const isSingleSelected = !isVisaoGeral && selectedBancaIds.length === 1 && isSelected;
+
+                  return (
+                    <DropdownMenuItem 
+                      key={banca.id}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        isSingleSelected && "bg-primary/10 text-primary"
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        selectSingleBanca(banca.id);
+                      }}
+                    >
+                      {isVisaoGeral && (
+                        <Checkbox 
+                          checked={isSelected}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleBancaSelection(banca.id);
+                          }}
+                          className="mr-1"
+                        />
+                      )}
+                      <span>{banca.name}</span>
+                      {isSingleSelected && <Check className="w-4 h-4 ml-auto" />}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </>
+            )}
+
+            <DropdownMenuSeparator />
+
+            {/* Adicionar Banca */}
+            <DropdownMenuItem 
+              onClick={() => {
+                setNewBancaName('');
+                setNewBancaBalance('');
+                setIsDialogOpen(true);
+              }}
+              className="text-primary cursor-pointer"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar banca
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Actions */}

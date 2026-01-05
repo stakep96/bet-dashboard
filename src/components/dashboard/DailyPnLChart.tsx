@@ -19,8 +19,9 @@ type Period = '1W' | '1M' | '3M' | '6M' | '1Y';
 
 export function DailyPnLChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
-  const { selectedBanca } = useBanca();
+  const { isVisaoGeral, getSelectedBancas } = useBanca();
   const { dailyPnL, hasData } = useDashboardMetrics();
+  const selectedBancas = getSelectedBancas();
 
   const filteredData = filterByPeriod(dailyPnL, selectedPeriod);
   const totalPnL = filteredData.reduce((acc, curr) => acc + curr.pnl, 0);
@@ -52,11 +53,9 @@ export function DailyPnLChart() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
-              {selectedBanca && (
-                <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                  {selectedBanca.name}
-                </span>
-              )}
+              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                {isVisaoGeral ? 'Visão Geral' : selectedBancas[0]?.name || ''}
+              </span>
             </div>
             <p className="text-2xl font-bold mt-1">R$ 0,00</p>
           </div>
@@ -74,11 +73,9 @@ export function DailyPnLChart() {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
-            {selectedBanca && (
-              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                {selectedBanca.name}
-              </span>
-            )}
+            <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+              {isVisaoGeral ? 'Visão Geral' : selectedBancas[0]?.name || ''}
+            </span>
           </div>
           <p className="text-2xl font-bold mt-1">
             R$ {Math.abs(totalPnL).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
