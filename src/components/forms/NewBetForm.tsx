@@ -11,7 +11,11 @@ import { toast } from 'sonner';
 
 interface NewBetFormProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  /**
+   * Retorne `true` quando a entrada foi salva com sucesso.
+   * Se retornar `false`, o modal NÃO fecha.
+   */
+  onSubmit: (data: any) => boolean;
 }
 
 interface BetSelection {
@@ -208,10 +212,12 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const stake = parseFloat(generalData.stake);
     const totalOdd = generalData.totalOdd ? parseFloat(generalData.totalOdd) : calculateTotalOdd();
-    
+
+    let ok = true;
+
     // For combined bets, calculate profit based on total odd
     if (betType === 'combined') {
       let profitLoss = 0;
@@ -222,18 +228,20 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
       }
 
       // Submit all selections as separate entries but linked conceptually
-      selections.forEach((selection, index) => {
+      for (let index = 0; index < selections.length; index++) {
+        const selection = selections[index];
         const selectionStake = stake / selections.length; // Divide stake equally for tracking
         const selectionProfit = profitLoss / selections.length;
-        
-        onSubmit({
+
+        ok = onSubmit({
           id: Date.now().toString() + '-' + index,
           createdAt: new Date(generalData.createdAt),
           eventDate: new Date(selection.eventDate),
           modality: selection.modality || 'OUTRO',
           match: selection.match,
           market: selection.market,
-          entry: selection.entry + (selections.length > 1 ? ` [Combinada ${index + 1}/${selections.length}]` : ''),
+          entry: selection.entry +
+            (selections.length > 1 ? ` [Combinada ${index + 1}/${selections.length}]` : ''),
           odd: parseFloat(selection.odd) || totalOdd,
           stake: selectionStake,
           result: generalData.result,
@@ -241,12 +249,14 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
           timing: selection.timing,
           bookmaker: generalData.bookmaker,
         });
-      });
+
+        if (!ok) break;
+      }
     } else {
       // Simple bet
       const selection = selections[0];
       const odd = parseFloat(selection.odd);
-      
+
       let profitLoss = 0;
       if (generalData.result === 'GREEN') {
         profitLoss = stake * (odd - 1);
@@ -254,7 +264,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
         profitLoss = -stake;
       }
 
-      onSubmit({
+      ok = onSubmit({
         id: Date.now().toString(),
         createdAt: new Date(generalData.createdAt),
         eventDate: new Date(selection.eventDate),
@@ -270,8 +280,8 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
         bookmaker: generalData.bookmaker,
       });
     }
-    
-    onClose();
+
+    if (ok) onClose();
   };
 
   return (
