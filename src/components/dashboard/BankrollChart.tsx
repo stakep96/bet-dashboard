@@ -170,13 +170,15 @@ export function BankrollChart() {
               width={55}
             />
             <Tooltip 
-              content={({ active, payload, label }) => {
+              content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0].payload;
                   const isPositive = data.change >= 0;
+                  const date = parseChartDate(data.date);
+                  const formattedDate = date ? format(date, "dd/MMM", { locale: ptBR }).replace('.', '') : data.date;
                   return (
                     <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-                      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                      <p className="text-xs text-muted-foreground mb-2">{formattedDate}</p>
                       <p className="text-sm font-semibold">
                         Banca: R$ {data.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
