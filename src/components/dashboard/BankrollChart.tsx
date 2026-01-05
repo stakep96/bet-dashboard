@@ -145,14 +145,14 @@ export function BankrollChart() {
 
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 5, left: 5, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
               dataKey="monthLabel" 
               axisLine={false} 
               tickLine={false}
               tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-              interval="preserveStartEnd"
+              interval={0}
               height={30}
             />
             <YAxis 
@@ -160,10 +160,14 @@ export function BankrollChart() {
               tickLine={false}
               tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
               tickFormatter={(value) => {
-                if (value < 0) return `-R$${Math.abs(value/1000).toFixed(0)}k`;
-                return `R$${(value/1000).toFixed(0)}k`
+                if (Math.abs(value) >= 1000) {
+                  if (value < 0) return `-R$${Math.abs(value/1000).toFixed(0)}k`;
+                  return `R$${(value/1000).toFixed(0)}k`;
+                }
+                return `R$${value.toFixed(0)}`;
               }}
-              domain={['dataMin - 2000', 'dataMax + 2000']}
+              tickCount={6}
+              width={55}
             />
             <Tooltip 
               content={({ active, payload, label }) => {
