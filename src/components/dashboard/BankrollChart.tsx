@@ -32,53 +32,39 @@ export function BankrollChart() {
   // Filter data based on selected period
   const filteredHistory = filterByPeriod(bankrollHistory, selectedPeriod);
 
-  // Aggregate data by month
-  const monthlyData = useMemo(() => {
-    const monthMap = new Map<string, { value: number; change: number; label: string }>();
-    
-    filteredHistory.forEach((item) => {
+  // Transform data for waterfall chart (keep daily data)
+  const chartData = useMemo(() => {
+    return filteredHistory.map((item, index) => {
+      const prevValue = index > 0 ? filteredHistory[index - 1].value : 0;
+      const isPositive = item.change >= 0;
       const date = parseChartDate(item.date);
-      if (!date) return;
       
-      const monthKey = format(date, 'yyyy-MM');
-      const monthLabel = format(date, 'MMM/yy', { locale: ptBR });
-      
-      if (monthMap.has(monthKey)) {
-        const existing = monthMap.get(monthKey)!;
-        existing.change += item.change;
-        existing.value = item.value; // Take the last value of the month
-      } else {
-        monthMap.set(monthKey, {
-          value: item.value,
-          change: item.change,
-          label: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
-        });
+      // Get month label for X-axis (only show for first entry of each month)
+      let monthLabel = '';
+      if (date) {
+        const prevItem = index > 0 ? filteredHistory[index - 1] : null;
+        const prevDate = prevItem ? parseChartDate(prevItem.date) : null;
+        
+        // Show label only if it's a new month or first item
+        if (!prevDate || format(date, 'MM/yyyy') !== format(prevDate, 'MM/yyyy')) {
+          monthLabel = format(date, 'MMM/yy', { locale: ptBR });
+          monthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+        }
       }
+      
+      return {
+        ...item,
+        monthLabel,
+        base: isPositive ? prevValue : item.value,
+        barHeight: Math.abs(item.change),
+        isPositive,
+      };
     });
-    
-    return Array.from(monthMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, data]) => data);
   }, [filteredHistory]);
 
-  // Transform data for waterfall chart
-  const chartData = monthlyData.map((item, index) => {
-    const prevValue = index > 0 ? monthlyData[index - 1].value : 0;
-    const isPositive = item.change >= 0;
-    
-    return {
-      date: item.label,
-      value: item.value,
-      change: item.change,
-      base: isPositive ? prevValue : item.value,
-      barHeight: Math.abs(item.change),
-      isPositive,
-    };
-  });
-
   // Calculate current value and growth
-  const currentValue = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1].value : 0;
-  const initialValue = monthlyData.length > 0 ? monthlyData[0].value - (monthlyData[0].change || 0) : 0;
+  const currentValue = filteredHistory.length > 0 ? filteredHistory[filteredHistory.length - 1].value : 0;
+  const initialValue = filteredHistory.length > 0 ? filteredHistory[0].value - (filteredHistory[0].change || 0) : 0;
   const growthPercent = initialValue > 0 ? ((currentValue - initialValue) / initialValue * 100).toFixed(0) : 0;
 
   if (!hasData) {
@@ -162,11 +148,11 @@ export function BankrollChart() {
           <ComposedChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
-              dataKey="date" 
+              dataKey="monthLabel" 
               axisLine={false} 
               tickLine={false}
               tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-              interval={0}
+              interval="preserveStartEnd"
               height={30}
             />
             <YAxis 
