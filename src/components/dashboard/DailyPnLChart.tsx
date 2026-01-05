@@ -109,15 +109,15 @@ export function DailyPnLChart() {
 
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
               dataKey="monthLabel" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', dy: 8 }}
               interval={0}
-              height={30}
+              height={40}
             />
             <YAxis 
               axisLine={false} 
@@ -129,12 +129,6 @@ export function DailyPnLChart() {
               }}
               tickCount={6}
               width={55}
-            />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false}
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-              tickFormatter={(value) => `R$${value >= 0 ? '' : '-'}${Math.abs(value / 1000).toFixed(1)}k`}
             />
             <Tooltip 
               content={({ active, payload }) => {
