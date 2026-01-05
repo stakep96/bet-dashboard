@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -7,11 +8,15 @@ import {
   Settings, 
   HelpCircle,
   ChevronUp,
-  ChevronRight
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logo from '@/assets/logo.png';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavItem {
   icon: React.ElementType;
@@ -34,6 +39,36 @@ const bottomNavItems: NavItem[] = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [displayName, setDisplayName] = useState('');
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data?.display_name) {
+        setDisplayName(data.display_name);
+      }
+    };
+    
+    loadProfile();
+  }, [user]);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-card border-r border-border flex flex-col">
@@ -118,18 +153,27 @@ export function Sidebar() {
 
       {/* User Profile */}
       <div className="px-4 py-4 border-t border-border">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-            <span className="text-sm font-semibold text-white">JB</span>
-          </div>
+        <div 
+          className="flex items-center gap-3 px-2 cursor-pointer hover:bg-muted/50 rounded-lg py-2 transition-colors"
+          onClick={() => navigate('/configuracoes')}
+        >
+          <Avatar className="h-10 w-10 bg-primary text-primary-foreground">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+              {displayName ? getInitials(displayName) : user?.email?.[0]?.toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <p className="text-sm font-medium truncate text-foreground">João Bets</p>
-              <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-[8px] text-primary-foreground">✓</span>
-              </div>
+              <p className="text-sm font-medium truncate text-foreground">
+                {displayName || user?.email?.split('@')[0] || 'Usuário'}
+              </p>
+              {displayName && (
+                <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground truncate">joao@email.com</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </div>
