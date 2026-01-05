@@ -151,10 +151,23 @@ const Banca = () => {
                   <div className="text-2xl font-bold text-foreground">
                     R$ {banca.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-green-500">+12.5% este mês</span>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Inicial: R$ {banca.initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
+                  {(() => {
+                    const roi = banca.initialBalance > 0 
+                      ? ((banca.balance - banca.initialBalance) / banca.initialBalance) * 100 
+                      : 0;
+                    const isPositive = roi >= 0;
+                    return (
+                      <div className="flex items-center gap-2 mt-2">
+                        <TrendingUp className={`h-4 w-4 ${isPositive ? 'text-green-500' : 'text-red-500'}`} />
+                        <span className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+                          {isPositive ? '+' : ''}{roi.toFixed(2)}% ROI
+                        </span>
+                      </div>
+                    );
+                  })()}
                   {selectedBanca?.id === banca.id && (
                     <Badge className="mt-3 bg-primary/10 text-primary hover:bg-primary/20">
                       Selecionada
