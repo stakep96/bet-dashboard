@@ -26,32 +26,49 @@ serve(async (req) => {
     }
 
     const systemPrompt = `Você é um assistente especializado em extrair dados de bilhetes/comprovantes de apostas esportivas.
-Analise a imagem do bilhete e extraia as seguintes informações:
+Analise a imagem do bilhete e extraia TODAS as apostas contidas nele. Isso inclui:
+- Apostas simples (uma única seleção)
+- Apostas múltiplas/combinadas (várias seleções em partidas diferentes)
+- Bet Builder (várias seleções na mesma partida)
+
+Para CADA aposta/seleção encontrada, extraia:
 - match: Nome da partida/confronto (ex: "Flamengo x Palmeiras")
 - modality: Modalidade do esporte (FUTEBOL, BASQUETE, TÊNIS, MMA, ESPORTS, OUTRO)
 - market: Tipo de mercado apostado (ex: "Resultado final", "Total gols", "Ambas marcam", etc)
 - entry: A entrada/seleção feita (ex: "Vitória do Flamengo", "Acima de 2.5 gols")
-- odd: O valor da odd (número decimal, ex: 1.85)
-- stake: Valor apostado em reais (número, ex: 100.00)
-- bookmaker: Casa de apostas (Bet365, Betano, Sportingbet, Betsson, Pinnacle, Betfair, Ultrabet, ou outra)
+- odd: O valor da odd INDIVIDUAL desta seleção (número decimal, ex: 1.85). Se não visível, use null.
 - eventDate: Data do evento (formato YYYY-MM-DD)
 - timing: Se a aposta foi PRÉ jogo ou LIVE
-- result: Se visível, o resultado (GREEN, RED, CASHOUT, DEVOLVIDA, PENDING)
+
+Informações GERAIS do bilhete (aplicadas a todas as apostas):
+- stake: Valor total apostado em reais (número, ex: 100.00)
+- bookmaker: Casa de apostas (Bet365, Betano, Sportingbet, Betsson, Pinnacle, Betfair, Ultrabet, ou outra)
+- totalOdd: Odd total/combinada do bilhete (se for múltipla/combinada)
+- result: Se visível, o resultado geral do bilhete (GREEN, RED, CASHOUT, DEVOLVIDA, PENDING)
+- isCombined: true se for bilhete combinado/múltipla/betbuilder, false se for aposta simples
 
 Responda APENAS com um JSON válido no formato:
 {
-  "match": "string ou null",
-  "modality": "string ou null",
-  "market": "string ou null",
-  "entry": "string ou null",
-  "odd": number ou null,
+  "isCombined": boolean,
   "stake": number ou null,
+  "totalOdd": number ou null,
   "bookmaker": "string ou null",
-  "eventDate": "YYYY-MM-DD ou null",
-  "timing": "PRÉ ou LIVE ou null",
-  "result": "GREEN, RED, CASHOUT, DEVOLVIDA, PENDING ou null"
+  "result": "GREEN, RED, CASHOUT, DEVOLVIDA, PENDING ou null",
+  "bets": [
+    {
+      "match": "string ou null",
+      "modality": "string ou null",
+      "market": "string ou null",
+      "entry": "string ou null",
+      "odd": number ou null,
+      "eventDate": "YYYY-MM-DD ou null",
+      "timing": "PRÉ ou LIVE ou null"
+    }
+  ]
 }
 
+Se for aposta simples, o array "bets" terá apenas 1 item.
+Se for múltipla/combinada/betbuilder, o array "bets" terá múltiplos itens.
 Se não conseguir identificar algum campo, retorne null para esse campo.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
