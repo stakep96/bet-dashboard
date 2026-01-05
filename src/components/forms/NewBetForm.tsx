@@ -15,7 +15,7 @@ interface NewBetFormProps {
    * Retorne `true` quando a entrada foi salva com sucesso.
    * Se retornar `false`, o modal NÃO fecha.
    */
-  onSubmit: (data: any) => boolean;
+  onSubmit: (data: any) => boolean | Promise<boolean>;
 }
 
 interface BetSelection {
@@ -210,7 +210,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     return odds.reduce((acc, odd) => acc * odd, 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const stake = parseFloat(generalData.stake);
@@ -233,7 +233,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
         const selectionStake = stake / selections.length; // Divide stake equally for tracking
         const selectionProfit = profitLoss / selections.length;
 
-        ok = onSubmit({
+        const result = await onSubmit({
           id: Date.now().toString() + '-' + index,
           createdAt: new Date(generalData.createdAt),
           eventDate: new Date(selection.eventDate),
@@ -250,6 +250,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
           bookmaker: generalData.bookmaker,
         });
 
+        ok = result;
         if (!ok) break;
       }
     } else {
@@ -264,7 +265,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
         profitLoss = -stake;
       }
 
-      ok = onSubmit({
+      ok = await onSubmit({
         id: Date.now().toString(),
         createdAt: new Date(generalData.createdAt),
         eventDate: new Date(selection.eventDate),
