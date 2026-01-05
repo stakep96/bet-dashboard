@@ -510,7 +510,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className={`grid ${betType === 'combined' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
                       <div className="space-y-2">
                         <Label>Odd {betType === 'combined' ? '(individual)' : ''}</Label>
                         <Input 
@@ -522,15 +522,17 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                           onChange={(e) => updateSelection(selection.id, 'odd', e.target.value)}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Data do Evento</Label>
-                        <Input 
-                          type="date"
-                          value={selection.eventDate}
-                          onChange={(e) => updateSelection(selection.id, 'eventDate', e.target.value)}
-                          required
-                        />
-                      </div>
+                      {betType === 'combined' && (
+                        <div className="space-y-2">
+                          <Label>Data do Evento</Label>
+                          <Input 
+                            type="date"
+                            value={selection.eventDate}
+                            onChange={(e) => updateSelection(selection.id, 'eventDate', e.target.value)}
+                            required
+                          />
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label>PRÉ / LIVE</Label>
                         <Select 
@@ -568,18 +570,22 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                   required
                 />
               </div>
-              {betType === 'combined' && (
-                <div className="space-y-2">
-                  <Label>Data do Evento</Label>
-                  <Input 
-                    type="date"
-                    value={generalData.eventDate}
-                    onChange={(e) => setGeneralData({ ...generalData, eventDate: e.target.value })}
-                    required
-                  />
-                </div>
-              )}
-              <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
+              <div className="space-y-2">
+                <Label>Data do Evento</Label>
+                <Input 
+                  type="date"
+                  value={betType === 'simple' ? selections[0]?.eventDate : generalData.eventDate}
+                  onChange={(e) => {
+                    if (betType === 'simple') {
+                      updateSelection(selections[0]?.id, 'eventDate', e.target.value);
+                    } else {
+                      setGeneralData({ ...generalData, eventDate: e.target.value });
+                    }
+                  }}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Casa de Apostas</Label>
                 <Select 
                   value={generalData.bookmaker} 
