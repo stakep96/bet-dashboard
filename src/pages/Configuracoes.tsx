@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,18 +10,25 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { User, Bell, Shield, Palette, Database, Trash2, Download, CalendarIcon, LogOut } from 'lucide-react';
+import { User, Bell, Shield, Palette, Database, Trash2, Download, CalendarIcon, LogOut, Check, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBanca } from '@/contexts/BancaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExportCSV } from '@/hooks/useExportCSV';
+import { supabase } from '@/integrations/supabase/client';
 
 const Configuracoes = () => {
   const { bancas, entradas } = useBanca();
   const { user, signOut } = useAuth();
   const { exportToCSV } = useExportCSV();
+  
+  // Profile state
+  const [displayName, setDisplayName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   
   // Export filters
   const [exportBancaId, setExportBancaId] = useState<string>('');
@@ -31,6 +38,47 @@ const Configuracoes = () => {
   const [exportModalidade, setExportModalidade] = useState<string>('');
 
   const modalidades = [...new Set(entradas.map(e => e.modalidade).filter(Boolean))];
+
+  // Load profile on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data?.display_name) {
+        setDisplayName(data.display_name);
+      }
+    };
+    
+    loadProfile();
+  }, [user]);
+
+  const handleSaveName = async () => {
+    if (!user || !displayName.trim()) return;
+    
+    setIsSavingName(true);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({ 
+        user_id: user.id, 
+        display_name: displayName.trim() 
+      }, { onConflict: 'user_id' });
+    
+    setIsSavingName(false);
+    
+    if (error) {
+      toast.error('Erro ao salvar nome');
+    } else {
+      toast.success('Nome atualizado!');
+      setIsEditingName(false);
+    }
+  };
 
   const handleExport = () => {
     let toExport = [...entradas];
@@ -62,6 +110,15 @@ const Configuracoes = () => {
     toast.success('Logout realizado com sucesso!');
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -86,11 +143,50 @@ const Configuracoes = () => {
                 <CardDescription>Informações básicas da sua conta</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={user?.email || ''} disabled />
+                {/* Profile Card - like the image */}
+                <div 
+                  className="flex items-center gap-4 p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setIsEditingName(true)}
+                >
+                  <Avatar className="h-12 w-12 bg-primary text-primary-foreground">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                      {displayName ? getInitials(displayName) : user?.email?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">
+                        {displayName || 'Adicionar nome'}
+                      </span>
+                      {displayName && <Check className="h-4 w-4 text-primary" />}
+                    </div>
+                    <span className="text-sm text-muted-foreground">{user?.email}</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <div className="flex items-center gap-4">
+
+                {/* Edit name form */}
+                {isEditingName && (
+                  <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+                    <Label htmlFor="displayName">Nome de exibição</Label>
+                    <Input
+                      id="displayName"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Seu nome"
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveName} disabled={isSavingName}>
+                        {isSavingName ? 'Salvando...' : 'Salvar'}
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsEditingName(false)}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 pt-2">
                   <Button variant="outline" onClick={handleSignOut} className="gap-2">
                     <LogOut className="h-4 w-4" />
                     Sair da Conta
