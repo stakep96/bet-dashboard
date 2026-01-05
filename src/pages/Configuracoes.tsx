@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,20 +13,21 @@ import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { User, Bell, Shield, Palette, Database, Trash2, Download, CalendarIcon, LogOut, Check, ChevronRight } from 'lucide-react';
+import { User, Bell, Palette, Database, Trash2, Download, CalendarIcon, LogOut, Check, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBanca } from '@/contexts/BancaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExportCSV } from '@/hooks/useExportCSV';
-import { supabase } from '@/integrations/supabase/client';
+import { useProfile } from '@/hooks/useProfile';
 
 const Configuracoes = () => {
   const { bancas, entradas } = useBanca();
   const { user, signOut } = useAuth();
   const { exportToCSV } = useExportCSV();
+  const { displayName, updateProfile, getInitials } = useProfile();
   
-  // Profile state
-  const [displayName, setDisplayName] = useState('');
+  // Profile editing state
+  const [editName, setEditName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
   
@@ -39,36 +40,17 @@ const Configuracoes = () => {
 
   const modalidades = [...new Set(entradas.map(e => e.modalidade).filter(Boolean))];
 
-  // Load profile on mount
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (data?.display_name) {
-        setDisplayName(data.display_name);
-      }
-    };
-    
-    loadProfile();
-  }, [user]);
+  const handleStartEditing = () => {
+    setEditName(displayName);
+    setIsEditingName(true);
+  };
 
   const handleSaveName = async () => {
-    if (!user || !displayName.trim()) return;
+    if (!editName.trim()) return;
     
     setIsSavingName(true);
     
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({ 
-        user_id: user.id, 
-        display_name: displayName.trim() 
-      }, { onConflict: 'user_id' });
+    const { error } = await updateProfile({ displayName: editName.trim() });
     
     setIsSavingName(false);
     
@@ -110,14 +92,6 @@ const Configuracoes = () => {
     toast.success('Logout realizado com sucesso!');
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,11 +120,11 @@ const Configuracoes = () => {
                 {/* Profile Card - like the image */}
                 <div 
                   className="flex items-center gap-4 p-4 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => setIsEditingName(true)}
+                  onClick={handleStartEditing}
                 >
                   <Avatar className="h-12 w-12 bg-primary text-primary-foreground">
                     <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                      {displayName ? getInitials(displayName) : user?.email?.[0]?.toUpperCase() || 'U'}
+                      {getInitials()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
@@ -171,8 +145,8 @@ const Configuracoes = () => {
                     <Label htmlFor="displayName">Nome de exibição</Label>
                     <Input
                       id="displayName"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
                       placeholder="Seu nome"
                     />
                     <div className="flex gap-2">

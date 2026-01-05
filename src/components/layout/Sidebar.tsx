@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -16,7 +15,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logo from '@/assets/logo.png';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useProfile } from '@/hooks/useProfile';
 
 interface NavItem {
   icon: React.ElementType;
@@ -41,34 +40,7 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [displayName, setDisplayName] = useState('');
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (data?.display_name) {
-        setDisplayName(data.display_name);
-      }
-    };
-    
-    loadProfile();
-  }, [user]);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const { displayName, getInitials } = useProfile();
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-72 bg-card border-r border-border flex flex-col">
@@ -159,7 +131,7 @@ export function Sidebar() {
         >
           <Avatar className="h-10 w-10 bg-primary text-primary-foreground">
             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-              {displayName ? getInitials(displayName) : user?.email?.[0]?.toUpperCase() || 'U'}
+              {getInitials()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
