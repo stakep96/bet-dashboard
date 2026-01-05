@@ -48,11 +48,14 @@ export function useDashboardMetrics() {
   const entradas = getEntradasByBanca();
 
   const metrics = useMemo((): DashboardMetrics => {
+    const initialBalance = selectedBanca?.initialBalance || 0;
+    const currentBalance = selectedBanca?.balance || 0;
+    
     if (entradas.length === 0) {
       return {
-        currentBankroll: selectedBanca?.balance || 0,
-        totalPnL: 0,
-        roi: 0,
+        currentBankroll: currentBalance,
+        totalPnL: currentBalance - initialBalance,
+        roi: initialBalance > 0 ? ((currentBalance - initialBalance) / initialBalance) * 100 : 0,
         winRate: 0,
         totalEntries: 0,
         wins: 0,
@@ -68,18 +71,17 @@ export function useDashboardMetrics() {
     const decidedBets = wins + losses;
     const winRate = decidedBets > 0 ? (wins / decidedBets) * 100 : 0;
 
-    const totalPnL = entradas.reduce((acc, e) => acc + e.lucro, 0);
+    const totalPnL = currentBalance - initialBalance;
     const totalStaked = entradas.reduce((acc, e) => acc + e.stake, 0);
-    const roi = totalStaked > 0 ? (totalPnL / totalStaked) * 100 : 0;
+    
+    // ROI baseado no valor inicial da banca
+    const roi = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
     const avgOdd = entradas.reduce((acc, e) => acc + e.odd, 0) / entradas.length;
     const avgStake = totalStaked / entradas.length;
 
-    const initialBankroll = (selectedBanca?.balance || 0) - totalPnL;
-    const currentBankroll = selectedBanca?.balance || totalPnL;
-
     return {
-      currentBankroll: totalPnL + (selectedBanca?.balance || 0) - totalPnL,
+      currentBankroll: currentBalance,
       totalPnL,
       roi,
       winRate,
