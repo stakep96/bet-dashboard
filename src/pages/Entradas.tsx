@@ -340,8 +340,45 @@ const Entradas = () => {
         <NewBetForm 
           onClose={() => setShowNewBetForm(false)}
           onSubmit={(data) => {
-            console.log('Nova entrada:', data);
-            setShowNewBetForm(false);
+            if (selectedBancaIds.length !== 1) {
+              toast.error('Selecione apenas uma banca para cadastrar a entrada.');
+              return false;
+            }
+
+            const toISODate = (value: any) => {
+              if (!value) return new Date().toISOString().split('T')[0];
+              const d = value instanceof Date ? value : new Date(value);
+              if (Number.isNaN(d.getTime())) return String(value);
+              return d.toISOString().split('T')[0];
+            };
+
+            const mapResultado = (value: any): Entrada['resultado'] => {
+              const v = String(value || '').toUpperCase().trim();
+              if (v === 'GREEN' || v === 'G') return 'G';
+              if (v === 'RED' || v === 'P') return 'P';
+              if (v === 'CASHOUT' || v === 'CASH' || v === 'C') return 'C';
+              if (v === 'DEVOLVIDA' || v === 'DEV' || v === 'D') return 'D';
+              return 'Pendente';
+            };
+
+            addEntradas([
+              {
+                data: toISODate(data?.createdAt),
+                dataEvento: toISODate(data?.eventDate),
+                modalidade: (data?.modality || 'OUTRO') as string,
+                evento: String(data?.match || ''),
+                mercado: String(data?.market || ''),
+                entrada: String(data?.entry || ''),
+                odd: Number(data?.odd || 0),
+                stake: Number(data?.stake || 0),
+                resultado: mapResultado(data?.result),
+                lucro: Number(data?.profitLoss || 0),
+                timing: String(data?.timing || 'PRÉ'),
+                site: String(data?.bookmaker || ''),
+              },
+            ]);
+
+            return true;
           }}
         />
       )}
