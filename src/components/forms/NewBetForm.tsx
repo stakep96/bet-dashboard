@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
-import { X, Upload, Image, Loader2 } from 'lucide-react';
+import { X, Upload, Image, Loader2, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { BetModality, BetTiming, BetResult } from '@/types/bet';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -11,6 +12,17 @@ import { toast } from 'sonner';
 interface NewBetFormProps {
   onClose: () => void;
   onSubmit: (data: any) => void;
+}
+
+interface BetSelection {
+  id: string;
+  match: string;
+  modality: BetModality | '';
+  market: string;
+  entry: string;
+  odd: string;
+  eventDate: string;
+  timing: BetTiming;
 }
 
 const modalities: BetModality[] = ['FUTEBOL', 'MMA', 'BASQUETE', 'TÊNIS', 'ESPORTS', 'OUTRO'];
@@ -29,19 +41,28 @@ const markets = [
   'Outro'
 ];
 
+const createEmptySelection = (): BetSelection => ({
+  id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+  match: '',
+  modality: '',
+  market: '',
+  entry: '',
+  odd: '',
+  eventDate: new Date().toISOString().split('T')[0],
+  timing: 'PRÉ',
+});
+
 export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
-  const [formData, setFormData] = useState({
+  const [betType, setBetType] = useState<'simple' | 'combined'>('simple');
+  const [selections, setSelections] = useState<BetSelection[]>([createEmptySelection()]);
+  const [expandedSelections, setExpandedSelections] = useState<Set<string>>(new Set([selections[0].id]));
+  
+  const [generalData, setGeneralData] = useState({
     createdAt: new Date().toISOString().split('T')[0],
-    eventDate: new Date().toISOString().split('T')[0],
-    modality: '' as BetModality,
-    match: '',
-    market: '',
-    entry: '',
-    odd: '',
     stake: '',
     result: 'PENDING' as BetResult,
-    timing: 'PRÉ' as BetTiming,
     bookmaker: '',
+    totalOdd: '',
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -62,20 +83,38 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
 
       if (data?.data) {
         const extracted = data.data;
-        setFormData(prev => ({
+        
+        // Set bet type based on extraction
+        if (extracted.isCombined && extracted.bets?.length > 1) {
+          setBetType('combined');
+        }
+        
+        // Set general data
+        setGeneralData(prev => ({
           ...prev,
-          match: extracted.match || prev.match,
-          modality: extracted.modality || prev.modality,
-          market: extracted.market || prev.market,
-          entry: extracted.entry || prev.entry,
-          odd: extracted.odd?.toString() || prev.odd,
           stake: extracted.stake?.toString() || prev.stake,
           bookmaker: extracted.bookmaker || prev.bookmaker,
-          eventDate: extracted.eventDate || prev.eventDate,
-          timing: extracted.timing || prev.timing,
           result: extracted.result || prev.result,
+          totalOdd: extracted.totalOdd?.toString() || prev.totalOdd,
         }));
-        toast.success('Dados extraídos com sucesso!');
+
+        // Set selections from extracted bets
+        if (extracted.bets && extracted.bets.length > 0) {
+          const newSelections: BetSelection[] = extracted.bets.map((bet: any, index: number) => ({
+            id: Date.now().toString() + index,
+            match: bet.match || '',
+            modality: bet.modality || '',
+            market: bet.market || '',
+            entry: bet.entry || '',
+            odd: bet.odd?.toString() || '',
+            eventDate: bet.eventDate || new Date().toISOString().split('T')[0],
+            timing: bet.timing || 'PRÉ',
+          }));
+          setSelections(newSelections);
+          setExpandedSelections(new Set(newSelections.map(s => s.id)));
+        }
+        
+        toast.success(`${extracted.bets?.length || 1} aposta(s) extraída(s) com sucesso!`);
       }
     } catch (error: any) {
       console.error('Error extracting data:', error);
@@ -124,27 +163,114 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     }
   }, [handleFileSelect]);
 
+  const addSelection = () => {
+    const newSelection = createEmptySelection();
+    setSelections([...selections, newSelection]);
+    setExpandedSelections(prev => new Set([...prev, newSelection.id]));
+  };
+
+  const removeSelection = (id: string) => {
+    if (selections.length > 1) {
+      setSelections(selections.filter(s => s.id !== id));
+      setExpandedSelections(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const updateSelection = (id: string, field: keyof BetSelection, value: any) => {
+    setSelections(selections.map(s => 
+      s.id === id ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const toggleExpanded = (id: string) => {
+    setExpandedSelections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const calculateTotalOdd = () => {
+    if (betType === 'simple') return parseFloat(selections[0]?.odd || '0');
+    
+    const odds = selections.map(s => parseFloat(s.odd || '0')).filter(o => o > 0);
+    if (odds.length === 0) return 0;
+    return odds.reduce((acc, odd) => acc * odd, 1);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const odd = parseFloat(formData.odd);
-    const stake = parseFloat(formData.stake);
     
-    let profitLoss = 0;
-    if (formData.result === 'GREEN') {
-      profitLoss = stake * (odd - 1);
-    } else if (formData.result === 'RED') {
-      profitLoss = -stake;
-    }
+    const stake = parseFloat(generalData.stake);
+    const totalOdd = generalData.totalOdd ? parseFloat(generalData.totalOdd) : calculateTotalOdd();
+    
+    // For combined bets, calculate profit based on total odd
+    if (betType === 'combined') {
+      let profitLoss = 0;
+      if (generalData.result === 'GREEN') {
+        profitLoss = stake * (totalOdd - 1);
+      } else if (generalData.result === 'RED') {
+        profitLoss = -stake;
+      }
 
-    onSubmit({
-      ...formData,
-      id: Date.now().toString(),
-      createdAt: new Date(formData.createdAt),
-      eventDate: new Date(formData.eventDate),
-      odd,
-      stake,
-      profitLoss,
-    });
+      // Submit all selections as separate entries but linked conceptually
+      selections.forEach((selection, index) => {
+        const selectionStake = stake / selections.length; // Divide stake equally for tracking
+        const selectionProfit = profitLoss / selections.length;
+        
+        onSubmit({
+          id: Date.now().toString() + '-' + index,
+          createdAt: new Date(generalData.createdAt),
+          eventDate: new Date(selection.eventDate),
+          modality: selection.modality || 'OUTRO',
+          match: selection.match,
+          market: selection.market,
+          entry: selection.entry + (selections.length > 1 ? ` [Combinada ${index + 1}/${selections.length}]` : ''),
+          odd: parseFloat(selection.odd) || totalOdd,
+          stake: selectionStake,
+          result: generalData.result,
+          profitLoss: selectionProfit,
+          timing: selection.timing,
+          bookmaker: generalData.bookmaker,
+        });
+      });
+    } else {
+      // Simple bet
+      const selection = selections[0];
+      const odd = parseFloat(selection.odd);
+      
+      let profitLoss = 0;
+      if (generalData.result === 'GREEN') {
+        profitLoss = stake * (odd - 1);
+      } else if (generalData.result === 'RED') {
+        profitLoss = -stake;
+      }
+
+      onSubmit({
+        id: Date.now().toString(),
+        createdAt: new Date(generalData.createdAt),
+        eventDate: new Date(selection.eventDate),
+        modality: selection.modality || 'OUTRO',
+        match: selection.match,
+        market: selection.market,
+        entry: selection.entry,
+        odd,
+        stake,
+        result: generalData.result,
+        profitLoss,
+        timing: selection.timing,
+        bookmaker: generalData.bookmaker,
+      });
+    }
+    
     onClose();
   };
 
@@ -155,7 +281,14 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     >
       <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-semibold">Cadastrar Nova Entrada</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">Cadastrar Nova Entrada</h2>
+            {betType === 'combined' && selections.length > 1 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {selections.length} seleções
+              </Badge>
+            )}
+          </div>
           <button 
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
@@ -218,7 +351,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                       Arraste ou cole (Ctrl+V) a imagem do bilhete
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      ou clique para selecionar um arquivo
+                      Suporta apostas simples, múltiplas e Bet Builder
                     </p>
                   </div>
                 </div>
@@ -226,165 +359,272 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
             </div>
           </div>
 
-          {/* Datas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Data do Cadastro</Label>
-              <Input 
-                type="date"
-                value={formData.createdAt}
-                onChange={(e) => setFormData({ ...formData, createdAt: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Data do Evento</Label>
-              <Input 
-                type="date"
-                value={formData.eventDate}
-                onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                required
-              />
+          {/* Tipo de Aposta */}
+          <div className="space-y-2">
+            <Label>Tipo de Aposta</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={betType === 'simple' ? 'default' : 'outline'}
+                className="flex-1"
+                onClick={() => {
+                  setBetType('simple');
+                  setSelections([selections[0] || createEmptySelection()]);
+                }}
+              >
+                Simples
+              </Button>
+              <Button
+                type="button"
+                variant={betType === 'combined' ? 'default' : 'outline'}
+                className="flex-1"
+                onClick={() => setBetType('combined')}
+              >
+                Múltipla / Bet Builder
+              </Button>
             </div>
           </div>
 
-          {/* Modalidade e Partida */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Modalidade</Label>
-              <Select 
-                value={formData.modality} 
-                onValueChange={(v) => setFormData({ ...formData, modality: v as BetModality })}
+          {/* Seleções */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Seleções</Label>
+              {betType === 'combined' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSelection}
+                  className="gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar
+                </Button>
+              )}
+            </div>
+
+            {selections.map((selection, index) => (
+              <div 
+                key={selection.id}
+                className="border border-border rounded-xl overflow-hidden"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {modalities.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Partida / Confronto</Label>
-              <Input 
-                placeholder="Ex: Flamengo x Palmeiras"
-                value={formData.match}
-                onChange={(e) => setFormData({ ...formData, match: e.target.value })}
-                required
-              />
-            </div>
+                {/* Selection Header */}
+                <div 
+                  className={`flex items-center justify-between p-3 bg-muted/30 cursor-pointer ${betType === 'combined' ? 'hover:bg-muted/50' : ''}`}
+                  onClick={() => betType === 'combined' && toggleExpanded(selection.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    {betType === 'combined' && (
+                      expandedSelections.has(selection.id) ? (
+                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      )
+                    )}
+                    <span className="text-sm font-medium">
+                      {betType === 'combined' ? `Seleção ${index + 1}` : 'Detalhes da Aposta'}
+                    </span>
+                    {selection.match && !expandedSelections.has(selection.id) && (
+                      <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        — {selection.match}
+                      </span>
+                    )}
+                  </div>
+                  {betType === 'combined' && selections.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSelection(selection.id);
+                      }}
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Selection Fields */}
+                {(betType === 'simple' || expandedSelections.has(selection.id)) && (
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Modalidade</Label>
+                        <Select 
+                          value={selection.modality} 
+                          onValueChange={(v) => updateSelection(selection.id, 'modality', v as BetModality)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {modalities.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Partida / Confronto</Label>
+                        <Input 
+                          placeholder="Ex: Flamengo x Palmeiras"
+                          value={selection.match}
+                          onChange={(e) => updateSelection(selection.id, 'match', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Mercado</Label>
+                        <Select 
+                          value={selection.market} 
+                          onValueChange={(v) => updateSelection(selection.id, 'market', v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {markets.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Entrada (Descrição)</Label>
+                        <Input 
+                          placeholder="Ex: Acima de 9.5"
+                          value={selection.entry}
+                          onChange={(e) => updateSelection(selection.id, 'entry', e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Odd {betType === 'combined' ? '(individual)' : ''}</Label>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          placeholder="1.85"
+                          value={selection.odd}
+                          onChange={(e) => updateSelection(selection.id, 'odd', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Data do Evento</Label>
+                        <Input 
+                          type="date"
+                          value={selection.eventDate}
+                          onChange={(e) => updateSelection(selection.id, 'eventDate', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>PRÉ / LIVE</Label>
+                        <Select 
+                          value={selection.timing} 
+                          onValueChange={(v) => updateSelection(selection.id, 'timing', v as BetTiming)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timings.map((t) => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* Mercado e Entrada */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Mercado</Label>
-              <Select 
-                value={formData.market} 
-                onValueChange={(v) => setFormData({ ...formData, market: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {markets.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Dados Gerais */}
+          <div className="space-y-4 pt-2 border-t border-border">
+            <Label className="text-base">Dados Gerais do Bilhete</Label>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data do Cadastro</Label>
+                <Input 
+                  type="date"
+                  value={generalData.createdAt}
+                  onChange={(e) => setGeneralData({ ...generalData, createdAt: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Casa de Apostas</Label>
+                <Select 
+                  value={generalData.bookmaker} 
+                  onValueChange={(v) => setGeneralData({ ...generalData, bookmaker: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bookmakers.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Entrada (Descrição)</Label>
-              <Input 
-                placeholder="Ex: Acima de 9.5"
-                value={formData.entry}
-                onChange={(e) => setFormData({ ...formData, entry: e.target.value })}
-                required
-              />
-            </div>
-          </div>
 
-          {/* Odd, Stake e Casa */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Odd</Label>
-              <Input 
-                type="number"
-                step="0.01"
-                min="1"
-                placeholder="1.85"
-                value={formData.odd}
-                onChange={(e) => setFormData({ ...formData, odd: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Stake (R$)</Label>
-              <Input 
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="100.00"
-                value={formData.stake}
-                onChange={(e) => setFormData({ ...formData, stake: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Casa de Apostas</Label>
-              <Select 
-                value={formData.bookmaker} 
-                onValueChange={(v) => setFormData({ ...formData, bookmaker: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {bookmakers.map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Resultado e Timing */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Resultado</Label>
-              <Select 
-                value={formData.result} 
-                onValueChange={(v) => setFormData({ ...formData, result: v as BetResult })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">Pendente</SelectItem>
-                  <SelectItem value="GREEN">Green (Ganho)</SelectItem>
-                  <SelectItem value="RED">Red (Perda)</SelectItem>
-                  <SelectItem value="CASHOUT">Cashout</SelectItem>
-                  <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>PRÉ / LIVE</Label>
-              <Select 
-                value={formData.timing} 
-                onValueChange={(v) => setFormData({ ...formData, timing: v as BetTiming })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timings.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Stake Total (R$)</Label>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="100.00"
+                  value={generalData.stake}
+                  onChange={(e) => setGeneralData({ ...generalData, stake: e.target.value })}
+                  required
+                />
+              </div>
+              {betType === 'combined' && (
+                <div className="space-y-2">
+                  <Label>Odd Total</Label>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    placeholder={calculateTotalOdd().toFixed(2)}
+                    value={generalData.totalOdd}
+                    onChange={(e) => setGeneralData({ ...generalData, totalOdd: e.target.value })}
+                  />
+                </div>
+              )}
+              <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
+                <Label>Resultado</Label>
+                <Select 
+                  value={generalData.result} 
+                  onValueChange={(v) => setGeneralData({ ...generalData, result: v as BetResult })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pendente</SelectItem>
+                    <SelectItem value="GREEN">Green (Ganho)</SelectItem>
+                    <SelectItem value="RED">Red (Perda)</SelectItem>
+                    <SelectItem value="CASHOUT">Cashout</SelectItem>
+                    <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -394,7 +634,9 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
               Cancelar
             </Button>
             <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90">
-              Cadastrar Entrada
+              {betType === 'combined' && selections.length > 1 
+                ? `Cadastrar ${selections.length} Entradas` 
+                : 'Cadastrar Entrada'}
             </Button>
           </div>
         </form>
