@@ -355,59 +355,77 @@ const Entradas = () => {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Modalidade</TableHead>
-                      <TableHead>Evento</TableHead>
-                      <TableHead>Mercado</TableHead>
-                      <TableHead>Entrada</TableHead>
-                      <TableHead className="text-center">Odd</TableHead>
-                      <TableHead className="text-right">Stake</TableHead>
-                      <TableHead className="text-center">Resultado</TableHead>
-                      <TableHead className="text-right">Lucro/Perda</TableHead>
-                      <TableHead>Site</TableHead>
+                    <TableRow className="text-xs">
+                      <TableHead className="text-xs">Data</TableHead>
+                      <TableHead className="text-xs">Modalidade</TableHead>
+                      <TableHead className="text-xs">Evento</TableHead>
+                      <TableHead className="text-xs">Mercado</TableHead>
+                      <TableHead className="text-xs">Entrada</TableHead>
+                      <TableHead className="text-xs text-center">Odd</TableHead>
+                      <TableHead className="text-xs text-right">Stake</TableHead>
+                      <TableHead className="text-xs text-center">Resultado</TableHead>
+                      <TableHead className="text-xs text-right">Lucro/Perda</TableHead>
+                      <TableHead className="text-xs">Site</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEntradas.map((entrada) => (
-                      <TableRow key={entrada.id}>
-                        <TableCell className="text-muted-foreground">{entrada.data}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{entrada.modalidade}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium max-w-[200px] truncate" title={entrada.evento}>
-                          {entrada.evento}
-                        </TableCell>
-                        <TableCell className="max-w-[150px] truncate" title={entrada.mercado}>
-                          {entrada.mercado}
-                        </TableCell>
-                        <TableCell className="max-w-[120px] truncate" title={entrada.entrada}>
-                          {entrada.entrada || '-'}
-                        </TableCell>
-                        <TableCell className="text-center">{entrada.odd.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">R$ {entrada.stake.toFixed(2)}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge className={getResultadoVariant(entrada.resultado)}>
-                            {getResultadoLabel(entrada.resultado)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${entrada.lucro >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {entrada.lucro >= 0 ? '+' : ''}R$ {entrada.lucro.toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{entrada.site}</TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => setEditingEntrada(entrada)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredEntradas.map((entrada) => {
+                      const eventos = entrada.evento.split('|').map(e => e.trim()).filter(Boolean);
+                      const mercados = entrada.mercado.split('|').map(m => m.trim()).filter(Boolean);
+                      const entradas = (entrada.entrada || '').split('|').map(e => e.trim()).filter(Boolean);
+                      
+                      return (
+                        <TableRow key={entrada.id} className="text-xs">
+                          <TableCell className="text-muted-foreground text-xs py-2">{entrada.data}</TableCell>
+                          <TableCell className="py-2">
+                            <Badge variant="outline" className="text-xs">{entrada.modalidade}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium max-w-[200px] py-2">
+                            <div className="flex flex-col gap-0.5">
+                              {eventos.map((ev, idx) => (
+                                <span key={idx} className="text-xs">{ev}</span>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[150px] py-2">
+                            <div className="flex flex-col gap-0.5">
+                              {mercados.length > 0 ? mercados.map((m, idx) => (
+                                <span key={idx} className="text-xs">{m}</span>
+                              )) : <span className="text-xs">-</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[120px] py-2">
+                            <div className="flex flex-col gap-0.5">
+                              {entradas.length > 0 ? entradas.map((e, idx) => (
+                                <span key={idx} className="text-xs">{e}</span>
+                              )) : <span className="text-xs">-</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center text-xs py-2">{entrada.odd.toFixed(2)}</TableCell>
+                          <TableCell className="text-right text-xs py-2">R$ {entrada.stake.toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-2">
+                            <Badge className={`text-xs ${getResultadoVariant(entrada.resultado)}`}>
+                              {getResultadoLabel(entrada.resultado)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={`text-right font-medium text-xs py-2 ${entrada.lucro >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {entrada.lucro >= 0 ? '+' : ''}R$ {entrada.lucro.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs py-2">{entrada.site}</TableCell>
+                          <TableCell className="py-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7"
+                              onClick={() => setEditingEntrada(entrada)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
