@@ -50,38 +50,31 @@ export function useDashboardMetrics() {
   const metrics = useMemo((): DashboardMetrics => {
     const initialBalance = selectedBanca?.initialBalance || 0;
     const currentBalance = selectedBanca?.balance || 0;
-    
-    if (entradas.length === 0) {
-      return {
-        currentBankroll: currentBalance,
-        totalPnL: currentBalance - initialBalance,
-        roi: initialBalance > 0 ? ((currentBalance - initialBalance) / initialBalance) * 100 : 0,
-        winRate: 0,
-        totalEntries: 0,
-        wins: 0,
-        losses: 0,
-        avgOdd: 0,
-        avgStake: 0,
-        totalStaked: 0,
-      };
-    }
+
+    // Quando há entradas, o saldo atual deve refletir o valor inicial + lucro/prejuízo acumulado.
+    // Quando não há entradas, usamos o saldo salvo na banca (útil para bancas recém-criadas/ajustadas manualmente).
+    const pnlFromEntradas = entradas.reduce((acc, e) => acc + (e.lucro || 0), 0);
+    const totalPnL = entradas.length > 0 ? pnlFromEntradas : currentBalance - initialBalance;
+    const currentBankroll = entradas.length > 0 ? initialBalance + pnlFromEntradas : currentBalance;
 
     const wins = entradas.filter(e => e.resultado === 'G').length;
     const losses = entradas.filter(e => e.resultado === 'P').length;
     const decidedBets = wins + losses;
     const winRate = decidedBets > 0 ? (wins / decidedBets) * 100 : 0;
 
-    const totalPnL = currentBalance - initialBalance;
     const totalStaked = entradas.reduce((acc, e) => acc + e.stake, 0);
-    
+
     // ROI baseado no valor inicial da banca
     const roi = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
 
-    const avgOdd = entradas.reduce((acc, e) => acc + e.odd, 0) / entradas.length;
-    const avgStake = totalStaked / entradas.length;
+    const avgOdd = entradas.length > 0
+      ? entradas.reduce((acc, e) => acc + e.odd, 0) / entradas.length
+      : 0;
+
+    const avgStake = entradas.length > 0 ? totalStaked / entradas.length : 0;
 
     return {
-      currentBankroll: currentBalance,
+      currentBankroll,
       totalPnL,
       roi,
       winRate,

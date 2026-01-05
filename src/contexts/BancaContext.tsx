@@ -67,14 +67,24 @@ export function BancaProvider({ children }: { children: ReactNode }) {
   };
   const addEntradas = (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => {
     if (!selectedBanca) return;
-    
+
     const entradasComId: Entrada[] = novasEntradas.map((entrada, index) => ({
       ...entrada,
       id: `${Date.now()}-${index}`,
       bancaId: selectedBanca.id,
     }));
-    
+
+    const deltaBalance = entradasComId.reduce((acc, e) => acc + (e.lucro || 0), 0);
+
     setEntradas(prev => [...prev, ...entradasComId]);
+
+    // Atualiza o saldo atual da banca com base no lucro/prejuízo das novas entradas
+    if (deltaBalance !== 0) {
+      setBancas(prev =>
+        prev.map(b => (b.id === selectedBanca.id ? { ...b, balance: b.balance + deltaBalance } : b))
+      );
+      setSelectedBanca(prev => ({ ...prev, balance: prev.balance + deltaBalance }));
+    }
   };
 
   const getEntradasByBanca = (): Entrada[] => {
