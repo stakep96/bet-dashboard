@@ -17,6 +17,33 @@ const Estatisticas = () => {
             <p className="text-muted-foreground">Análise detalhada do seu desempenho</p>
           </div>
 
+          {/* Resumo do Mês */}
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold text-foreground">Resumo do Mês</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-500">+R$ 1.545</p>
+                  <p className="text-sm text-muted-foreground">Lucro Total</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">18</p>
+                  <p className="text-sm text-muted-foreground">Dias com Apostas</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-500">14</p>
+                  <p className="text-sm text-muted-foreground">Dias Positivos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-500">4</p>
+                  <p className="text-sm text-muted-foreground">Dias Negativos</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
