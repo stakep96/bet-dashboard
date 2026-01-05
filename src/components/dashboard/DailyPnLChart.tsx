@@ -26,6 +26,25 @@ export function DailyPnLChart() {
   const totalPnL = filteredData.reduce((acc, curr) => acc + curr.pnl, 0);
   const isPositive = totalPnL >= 0;
 
+  // Add month labels for X-axis (only show first occurrence of each month)
+  const chartData = filteredData.map((item, index) => {
+    const date = parseChartDate(item.date);
+    if (!date) return { ...item, monthLabel: '' };
+    
+    const monthLabel = format(date, 'MMM', { locale: ptBR }).replace('.', '');
+    const prevDate = index > 0 ? parseChartDate(filteredData[index - 1].date) : null;
+    const prevMonth = prevDate ? format(prevDate, 'MMM', { locale: ptBR }) : '';
+    const currentMonth = format(date, 'MMM', { locale: ptBR });
+    
+    // Only show label if it's the first entry or month changed
+    const showLabel = index === 0 || currentMonth !== prevMonth;
+    
+    return {
+      ...item,
+      monthLabel: showLabel ? monthLabel : ''
+    };
+  });
+
   if (!hasData) {
     return (
       <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
@@ -90,17 +109,26 @@ export function DailyPnLChart() {
 
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={filteredData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
-              dataKey="date" 
+              dataKey="monthLabel" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
               interval={0}
-              angle={-45}
-              textAnchor="end"
-              height={45}
+              height={30}
+            />
+            <YAxis 
+              axisLine={false} 
+              tickLine={false}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tickFormatter={(value) => {
+                if (Math.abs(value) < 1000) return `R$${value}`;
+                return `R$${value >= 0 ? '' : '-'}${Math.abs(value / 1000).toFixed(1)}k`;
+              }}
+              tickCount={6}
+              width={55}
             />
             <YAxis 
               axisLine={false} 
@@ -133,7 +161,7 @@ export function DailyPnLChart() {
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             >
-              {filteredData.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.pnl >= 0 ? 'hsl(var(--success))' : 'hsl(var(--destructive))'} 
