@@ -112,12 +112,12 @@ const Configuracoes = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Banca</Label>
-                    <Select value={exportBancaId} onValueChange={setExportBancaId}>
+                    <Select value={exportBancaId || "_all"} onValueChange={(v) => setExportBancaId(v === "_all" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todas as bancas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as bancas</SelectItem>
+                        <SelectItem value="_all">Todas as bancas</SelectItem>
                         {bancas.map(b => (
                           <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                         ))}
@@ -126,12 +126,12 @@ const Configuracoes = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Resultado</Label>
-                    <Select value={exportResultado} onValueChange={setExportResultado}>
+                    <Select value={exportResultado || "_all"} onValueChange={(v) => setExportResultado(v === "_all" ? "" : v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="_all">Todos</SelectItem>
                         <SelectItem value="G">Ganhou</SelectItem>
                         <SelectItem value="P">Perdeu</SelectItem>
                         <SelectItem value="C">Cashout</SelectItem>
@@ -185,12 +185,12 @@ const Configuracoes = () => {
 
                 <div className="space-y-2">
                   <Label>Modalidade</Label>
-                  <Select value={exportModalidade} onValueChange={setExportModalidade}>
+                  <Select value={exportModalidade || "_all"} onValueChange={(v) => setExportModalidade(v === "_all" ? "" : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas</SelectItem>
+                      <SelectItem value="_all">Todas</SelectItem>
                       {modalidades.map(m => (
                         <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}

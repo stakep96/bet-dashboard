@@ -121,12 +121,12 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
             {/* Resultado */}
             <div className="space-y-2">
               <Label>Resultado</Label>
-              <Select value={filters.resultado} onValueChange={(v) => updateFilter('resultado', v)}>
+              <Select value={filters.resultado || "_all"} onValueChange={(v) => updateFilter('resultado', v === "_all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="_all">Todos</SelectItem>
                   <SelectItem value="G">Ganhou</SelectItem>
                   <SelectItem value="P">Perdeu</SelectItem>
                   <SelectItem value="C">Cashout</SelectItem>
@@ -139,12 +139,12 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
             {/* Modalidade */}
             <div className="space-y-2">
               <Label>Modalidade</Label>
-              <Select value={filters.modalidade} onValueChange={(v) => updateFilter('modalidade', v)}>
+              <Select value={filters.modalidade || "_all"} onValueChange={(v) => updateFilter('modalidade', v === "_all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="_all">Todas</SelectItem>
                   {modalidades.map((m) => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -155,12 +155,12 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
             {/* Mercado */}
             <div className="space-y-2">
               <Label>Mercado</Label>
-              <Select value={filters.mercado} onValueChange={(v) => updateFilter('mercado', v)}>
+              <Select value={filters.mercado || "_all"} onValueChange={(v) => updateFilter('mercado', v === "_all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="_all">Todos</SelectItem>
                   {mercados.slice(0, 20).map((m) => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -171,12 +171,12 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
             {/* Site */}
             <div className="space-y-2">
               <Label>Site</Label>
-              <Select value={filters.site} onValueChange={(v) => updateFilter('site', v)}>
+              <Select value={filters.site || "_all"} onValueChange={(v) => updateFilter('site', v === "_all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="_all">Todos</SelectItem>
                   {sites.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
