@@ -145,15 +145,15 @@ export function BankrollChart() {
 
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 5, left: 5, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 5, left: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
             <XAxis 
               dataKey="monthLabel" 
               axisLine={false} 
               tickLine={false}
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', dy: 8 }}
               interval={0}
-              height={30}
+              height={40}
             />
             <YAxis 
               axisLine={false} 
