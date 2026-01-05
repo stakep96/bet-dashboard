@@ -216,53 +216,44 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     const stake = parseFloat(generalData.stake);
     const totalOdd = generalData.totalOdd ? parseFloat(generalData.totalOdd) : calculateTotalOdd();
 
-    // For combined bets with multiple selections, submit ALL at once
+    let profitLoss = 0;
+    if (generalData.result === 'GREEN') {
+      profitLoss = stake * (totalOdd - 1);
+    } else if (generalData.result === 'RED') {
+      profitLoss = -stake;
+    }
+
+    // For combined bets, merge all selections into a single entry
     if (betType === 'combined' && selections.length > 1) {
-      let profitLoss = 0;
-      if (generalData.result === 'GREEN') {
-        profitLoss = stake * (totalOdd - 1);
-      } else if (generalData.result === 'RED') {
-        profitLoss = -stake;
-      }
+      // Combine event names
+      const combinedEvent = selections.map(s => s.match).filter(Boolean).join(' + ');
+      // Combine markets
+      const combinedMarket = selections.map(s => s.market).filter(Boolean).join(' | ');
+      // Use first selection's modality or 'OUTRO'
+      const modality = selections[0]?.modality || 'OUTRO';
 
-      // Build array of all entries to submit
-      const allEntries = selections.map((selection, index) => {
-        const selectionStake = stake / selections.length;
-        const selectionProfit = profitLoss / selections.length;
-
-        return {
-          id: Date.now().toString() + '-' + index,
-          createdAt: new Date(generalData.createdAt),
-          eventDate: new Date(selection.eventDate),
-          modality: selection.modality || 'OUTRO',
-          match: selection.match,
-          market: selection.market,
-          entry: selection.entry + ` [Combinada ${index + 1}/${selections.length}]`,
-          odd: parseFloat(selection.odd) || totalOdd,
-          stake: selectionStake,
-          result: generalData.result,
-          profitLoss: selectionProfit,
-          timing: selection.timing,
-          bookmaker: generalData.bookmaker,
-          isCombined: true,
-          combinedTotal: selections.length,
-        };
+      const ok = await onSubmit({
+        id: Date.now().toString(),
+        createdAt: new Date(generalData.createdAt),
+        eventDate: new Date(selections[0]?.eventDate || generalData.createdAt),
+        modality,
+        match: combinedEvent,
+        market: combinedMarket,
+        entry: `Múltipla (${selections.length} seleções)`,
+        odd: totalOdd,
+        stake,
+        result: generalData.result,
+        profitLoss,
+        timing: selections[0]?.timing || 'PRÉ',
+        bookmaker: generalData.bookmaker,
+        betType: 'Múltipla',
       });
 
-      // Submit all entries - pass the array
-      const ok = await onSubmit(allEntries);
       if (ok) onClose();
     } else {
-      // Simple bet (or combined with single selection)
+      // Simple bet
       const selection = selections[0];
       const odd = parseFloat(selection.odd) || totalOdd;
-
-      let profitLoss = 0;
-      if (generalData.result === 'GREEN') {
-        profitLoss = stake * (odd - 1);
-      } else if (generalData.result === 'RED') {
-        profitLoss = -stake;
-      }
 
       const ok = await onSubmit({
         id: Date.now().toString(),
@@ -278,6 +269,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
         profitLoss,
         timing: selection.timing,
         bookmaker: generalData.bookmaker,
+        betType: 'Simples',
       });
 
       if (ok) onClose();
