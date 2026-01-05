@@ -241,6 +241,8 @@ export function useDashboardMetrics() {
 
 // Helper to parse entrada date (handles various formats)
 function parseEntradaDate(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  
   // Try common formats
   const cleanDate = dateStr.split(' ')[0]; // Remove time if present
   
@@ -249,21 +251,30 @@ function parseEntradaDate(dateStr: string): Date {
     const parts = cleanDate.split('/');
     if (parts.length === 3) {
       const [day, month, year] = parts.map(Number);
-      return new Date(year, month - 1, day);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month - 1, day);
+      }
     }
   }
   
   // YYYY-MM-DD format
   if (cleanDate.includes('-')) {
-    return new Date(cleanDate);
+    const date = new Date(cleanDate);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
   }
   
-  return new Date(dateStr);
+  const fallback = new Date(dateStr);
+  return isNaN(fallback.getTime()) ? new Date() : fallback;
 }
 
 // Format date for chart display
 function formatDateForChart(dateStr: string): string {
   const date = parseEntradaDate(dateStr);
+  if (isNaN(date.getTime())) {
+    return 'N/A';
+  }
   return format(date, 'dd/MM');
 }
 
