@@ -26,8 +26,9 @@ const parseChartDate = (dateStr: string): Date | null => {
 
 export function BankrollChart() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
-  const { selectedBanca } = useBanca();
+  const { isVisaoGeral, getSelectedBancas } = useBanca();
   const { bankrollHistory, hasData } = useDashboardMetrics();
+  const selectedBancas = getSelectedBancas();
 
   // Filter data based on selected period
   const filteredHistory = filterByPeriod(bankrollHistory, selectedPeriod);
@@ -74,11 +75,9 @@ export function BankrollChart() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-medium text-muted-foreground">Evolução da Banca</h3>
-              {selectedBanca && (
-                <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                  {selectedBanca.name}
-                </span>
-              )}
+              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                {isVisaoGeral ? 'Visão Geral' : selectedBancas[0]?.name || ''}
+              </span>
             </div>
             <p className="text-2xl font-bold mt-1">R$ 0,00</p>
           </div>
@@ -96,11 +95,9 @@ export function BankrollChart() {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium text-muted-foreground">Evolução da Banca</h3>
-            {selectedBanca && (
-              <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                {selectedBanca.name}
-              </span>
-            )}
+            <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+              {isVisaoGeral ? 'Visão Geral' : selectedBancas[0]?.name || ''}
+            </span>
           </div>
           <p className="text-2xl font-bold mt-1">R$ {currentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
         </div>

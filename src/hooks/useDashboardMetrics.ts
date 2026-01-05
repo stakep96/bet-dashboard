@@ -44,12 +44,12 @@ export interface MonthlyStats {
 }
 
 export function useDashboardMetrics() {
-  const { getEntradasByBanca, selectedBanca } = useBanca();
+  const { getEntradasByBanca, getTotalInitialBalance, getTotalBalance, isVisaoGeral } = useBanca();
   const entradas = getEntradasByBanca();
 
   const metrics = useMemo((): DashboardMetrics => {
-    const initialBalance = selectedBanca?.initialBalance || 0;
-    const currentBalance = selectedBanca?.balance || 0;
+    const initialBalance = getTotalInitialBalance();
+    const currentBalance = getTotalBalance();
 
     // Quando há entradas, o saldo atual deve refletir o valor inicial + lucro/prejuízo acumulado.
     // Quando não há entradas, usamos o saldo salvo na banca (útil para bancas recém-criadas/ajustadas manualmente).
@@ -85,11 +85,11 @@ export function useDashboardMetrics() {
       avgStake,
       totalStaked,
     };
-  }, [entradas, selectedBanca]);
+  }, [entradas, getTotalInitialBalance, getTotalBalance]);
 
   // Generate bankroll history from entries, starting from initialBalance
   const bankrollHistory = useMemo((): BankrollDataPoint[] => {
-    const initialBalance = selectedBanca?.initialBalance || 0;
+    const initialBalance = getTotalInitialBalance();
     
     if (entradas.length === 0) return [];
 
@@ -124,7 +124,7 @@ export function useDashboardMetrics() {
     });
 
     return history;
-  }, [entradas, selectedBanca]);
+  }, [entradas, getTotalInitialBalance]);
 
   // Generate daily PnL data
   const dailyPnL = useMemo((): DailyPnLDataPoint[] => {
@@ -159,7 +159,7 @@ export function useDashboardMetrics() {
   const monthlyStats = useMemo((): MonthlyStats[] => {
     if (entradas.length === 0) return [];
 
-    const initialBalance = selectedBanca?.initialBalance || 0;
+    const initialBalance = getTotalInitialBalance();
     const monthlyData: Map<string, Entrada[]> = new Map();
     
     entradas.forEach(entrada => {

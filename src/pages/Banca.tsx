@@ -25,7 +25,7 @@ interface BancaToEdit {
 }
 
 const Banca = () => {
-  const { bancas, entradas, selectedBanca, setSelectedBanca, addBanca, editBanca } = useBanca();
+  const { bancas, entradas, selectedBancaIds, selectSingleBanca, addBanca, editBanca } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
   const [newBancaBalance, setNewBancaBalance] = useState('');
@@ -142,8 +142,8 @@ const Banca = () => {
             {bancas.map((banca) => (
               <Card 
                 key={banca.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${selectedBanca?.id === banca.id ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setSelectedBanca(banca)}
+                className={`cursor-pointer transition-all hover:shadow-md ${selectedBancaIds.includes(banca.id) && selectedBancaIds.length === 1 ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => selectSingleBanca(banca.id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">{banca.name}</CardTitle>
@@ -192,7 +192,7 @@ const Banca = () => {
                       </>
                     );
                   })()}
-                  {selectedBanca?.id === banca.id && (
+                  {selectedBancaIds.includes(banca.id) && selectedBancaIds.length === 1 && (
                     <Badge className="mt-3 bg-primary/10 text-primary hover:bg-primary/20">
                       Selecionada
                     </Badge>
