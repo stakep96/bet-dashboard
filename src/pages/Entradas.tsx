@@ -236,8 +236,12 @@ const Entradas = () => {
         return;
       }
 
-      await addEntradas(novasEntradas);
-      toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca?.name}"!`);
+      try {
+        await addEntradas(novasEntradas);
+        toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca?.name}"!`);
+      } catch (err: any) {
+        toast.error(err?.message || 'Erro ao importar entradas. Verifique o formato das datas (use YYYY-MM-DD ou DD/MM/YYYY).');
+      }
     };
     reader.onerror = () => {
       toast.error('Erro ao ler o arquivo CSV.');
@@ -472,24 +476,29 @@ const Entradas = () => {
               return 'Pendente';
             };
 
-            await addEntradas([
-              {
-                data: toISODate(data?.createdAt),
-                dataEvento: toISODate(data?.eventDate),
-                modalidade: (data?.modality || 'OUTRO') as string,
-                evento: String(data?.match || ''),
-                mercado: String(data?.market || ''),
-                entrada: String(data?.entry || ''),
-                odd: Number(data?.odd || 0),
-                stake: Number(data?.stake || 0),
-                resultado: mapRes(data?.result),
-                lucro: Number(data?.profitLoss || 0),
-                timing: String(data?.timing || 'PRÉ'),
-                site: String(data?.bookmaker || ''),
-              },
-            ]);
+            try {
+              await addEntradas([
+                {
+                  data: toISODate(data?.createdAt),
+                  dataEvento: toISODate(data?.eventDate),
+                  modalidade: (data?.modality || 'OUTRO') as string,
+                  evento: String(data?.match || ''),
+                  mercado: String(data?.market || ''),
+                  entrada: String(data?.entry || ''),
+                  odd: Number(data?.odd || 0),
+                  stake: Number(data?.stake || 0),
+                  resultado: mapRes(data?.result),
+                  lucro: Number(data?.profitLoss || 0),
+                  timing: String(data?.timing || 'PRÉ'),
+                  site: String(data?.bookmaker || ''),
+                },
+              ]);
 
-            return true;
+              return true;
+            } catch {
+              toast.error('Erro ao salvar entrada.');
+              return false;
+            }
           }}
         />
       )}

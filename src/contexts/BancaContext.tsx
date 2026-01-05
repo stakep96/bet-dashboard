@@ -3,6 +3,40 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 
+const isoDateFromAny = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const v = String(value).trim();
+  if (!v) return null;
+
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  const m = v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (m) {
+    const day = Number(m[1]);
+    const month = Number(m[2]);
+    const year = Number(m[3]);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900 && year <= 2200) {
+      const dd = String(day).padStart(2, '0');
+      const mm = String(month).padStart(2, '0');
+      return `${year}-${mm}-${dd}`;
+    }
+  }
+
+  // Fallback: parse ISO-ish strings with time
+  const d = new Date(v);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().split('T')[0];
+
+  return null;
+};
+
+const requireISODate = (value: string | null | undefined, label: string): string => {
+  const iso = isoDateFromAny(value);
+  if (!iso) throw new Error(`${label} inválida: "${value ?? ''}"`);
+  return iso;
+};
+
 interface Banca {
   id: string;
   name: string;
@@ -245,38 +279,54 @@ export function BancaProvider({ children }: { children: ReactNode }) {
   };
 
   const addEntradas = async (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => {
-    if (!user || selectedBancaIds.length !== 1) return;
-    const bancaId = selectedBancaIds[0];
-
-    const toInsert = novasEntradas.map(e => ({
-      user_id: user.id,
-      banca_id: bancaId,
-      date: e.data,
-      event_date: e.dataEvento,
-      modality: e.modalidade,
-      event: e.evento,
-      market: e.mercado,
-      entry: e.entrada,
-      odd: e.odd,
-      stake: e.stake,
-      result: e.resultado,
-      profit: e.lucro,
-      betting_house: e.site,
-      timing: e.timing,
-    }));
-
-    const { data, error } = await supabase
-      .from('entradas')
-      .insert(toInsert)
-      .select();
-
-    if (error) {
-      toast.error('Erro ao salvar entradas.');
-      console.error(error);
+    if (!user || selectedBancaIds.length !== 1) {
+      toast.error('Selecione apenas uma banca para cadastrar a entrada.');
       return;
     }
 
-    const mapped: Entrada[] = (data || []).map((e: any) => ({
+    const bancaId = selectedBancaIds[0];
+
+    const toInsert = novasEntradas.map((e) => {
+      const dateISO = requireISODate(e.data, 'Data');
+      const eventDateISO = isoDateFromAny(e.dataEvento);
+
+      return {
+        user_id: user.id,
+        banca_id: bancaId,
+        date: dateISO,
+        event_date: eventDateISO,
+        modality: e.modalidade,
+        event: e.evento,
+        market: e.mercado,
+        entry: e.entrada,
+        odd: e.odd,
+        stake: e.stake,
+        result: e.resultado,
+        profit: e.lucro,
+        betting_house: e.site,
+        timing: e.timing,
+      };
+    });
+
+    const CHUNK_SIZE = 200;
+    const insertedRows: any[] = [];
+
+    for (let i = 0; i < toInsert.length; i += CHUNK_SIZE) {
+      const chunk = toInsert.slice(i, i + CHUNK_SIZE);
+      const { data, error } = await supabase
+        .from('entradas')
+        .insert(chunk)
+        .select();
+
+      if (error) {
+        console.error(error);
+        throw error;
+      }
+
+      insertedRows.push(...(data || []));
+    }
+
+    const mapped: Entrada[] = insertedRows.map((e: any) => ({
       id: e.id,
       data: e.date,
       dataEvento: e.event_date || e.date,
@@ -293,20 +343,20 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       bancaId: e.banca_id,
     }));
 
-    setEntradas(prev => [...mapped, ...prev]);
+    setEntradas((prev) => [...mapped, ...prev]);
 
     // Update banca balance
     const deltaBalance = mapped.reduce((acc, e) => acc + e.lucro, 0);
     if (deltaBalance !== 0) {
-      const banca = bancas.find(b => b.id === bancaId);
+      const banca = bancas.find((b) => b.id === bancaId);
       if (banca) {
         await supabase
           .from('bancas')
           .update({ current_balance: banca.balance + deltaBalance })
           .eq('id', bancaId);
 
-        setBancas(prev =>
-          prev.map(b => (b.id === bancaId ? { ...b, balance: b.balance + deltaBalance } : b))
+        setBancas((prev) =>
+          prev.map((b) => (b.id === bancaId ? { ...b, balance: b.balance + deltaBalance } : b))
         );
       }
     }

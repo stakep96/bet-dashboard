@@ -40,24 +40,29 @@ const Index = () => {
       return 'Pendente';
     };
 
-    await addEntradas([
-      {
-        data: toISODate(data?.createdAt),
-        dataEvento: toISODate(data?.eventDate),
-        modalidade: (data?.modality || 'OUTRO') as string,
-        evento: String(data?.match || ''),
-        mercado: String(data?.market || ''),
-        entrada: String(data?.entry || ''),
-        odd: Number(data?.odd || 0),
-        stake: Number(data?.stake || 0),
-        resultado: mapResultado(data?.result),
-        lucro: Number(data?.profitLoss || 0),
-        timing: String(data?.timing || 'PRÉ'),
-        site: String(data?.bookmaker || ''),
-      },
-    ]);
+    try {
+      await addEntradas([
+        {
+          data: toISODate(data?.createdAt),
+          dataEvento: toISODate(data?.eventDate),
+          modalidade: (data?.modality || 'OUTRO') as string,
+          evento: String(data?.match || ''),
+          mercado: String(data?.market || ''),
+          entrada: String(data?.entry || ''),
+          odd: Number(data?.odd || 0),
+          stake: Number(data?.stake || 0),
+          resultado: mapResultado(data?.result),
+          lucro: Number(data?.profitLoss || 0),
+          timing: String(data?.timing || 'PRÉ'),
+          site: String(data?.bookmaker || ''),
+        },
+      ]);
 
-    return true;
+      return true;
+    } catch {
+      toast.error('Erro ao salvar entrada.');
+      return false;
+    }
   };
 
   if (loading) {
