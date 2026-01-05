@@ -243,6 +243,7 @@ export function useDashboardMetrics() {
 }
 
 // Helper to parse entrada date (handles various formats)
+// IMPORTANT: Parse dates as local time to avoid timezone issues
 function parseEntradaDate(dateStr: string): Date {
   if (!dateStr) return new Date();
   
@@ -260,11 +261,14 @@ function parseEntradaDate(dateStr: string): Date {
     }
   }
   
-  // YYYY-MM-DD format
+  // YYYY-MM-DD format - parse as local time, not UTC
   if (cleanDate.includes('-')) {
-    const date = new Date(cleanDate);
-    if (!isNaN(date.getTime())) {
-      return date;
+    const parts = cleanDate.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts.map(Number);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month - 1, day);
+      }
     }
   }
   
