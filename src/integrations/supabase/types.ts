@@ -53,6 +53,7 @@ export type Database = {
           date: string
           entry: string | null
           event: string
+          event_date: string | null
           id: string
           market: string | null
           modality: string
@@ -72,6 +73,7 @@ export type Database = {
           date: string
           entry?: string | null
           event: string
+          event_date?: string | null
           id?: string
           market?: string | null
           modality: string
@@ -91,6 +93,7 @@ export type Database = {
           date?: string
           entry?: string | null
           event?: string
+          event_date?: string | null
           id?: string
           market?: string | null
           modality?: string

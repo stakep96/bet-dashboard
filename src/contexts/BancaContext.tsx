@@ -104,7 +104,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     const mapped: Entrada[] = (data || []).map((e: any) => ({
       id: e.id,
       data: e.date,
-      dataEvento: e.date,
+      dataEvento: e.event_date || e.date,
       modalidade: e.modality,
       evento: e.event,
       mercado: e.market || '',
@@ -252,6 +252,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       user_id: user.id,
       banca_id: bancaId,
       date: e.data,
+      event_date: e.dataEvento,
       modality: e.modalidade,
       event: e.evento,
       market: e.mercado,
@@ -278,7 +279,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     const mapped: Entrada[] = (data || []).map((e: any) => ({
       id: e.id,
       data: e.date,
-      dataEvento: e.date,
+      dataEvento: e.event_date || e.date,
       modalidade: e.modality,
       evento: e.event,
       mercado: e.market || '',
@@ -320,6 +321,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       .from('entradas')
       .update({
         date: entrada.data,
+        event_date: entrada.dataEvento,
         modality: entrada.modalidade,
         event: entrada.evento,
         market: entrada.mercado,
