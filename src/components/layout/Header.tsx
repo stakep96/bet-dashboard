@@ -27,10 +27,12 @@ export function Header({ onNewEntry }: HeaderProps) {
   const { bancas, selectedBanca, setSelectedBanca, addBanca } = useBanca();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
+  const [newBancaBalance, setNewBancaBalance] = useState('');
 
   const handleBancaChange = (value: string) => {
     if (value === 'new') {
       setNewBancaName('');
+      setNewBancaBalance('');
       setIsDialogOpen(true);
     } else {
       const banca = bancas.find(b => b.id === value);
@@ -39,10 +41,11 @@ export function Header({ onNewEntry }: HeaderProps) {
   };
 
   const handleCreateBanca = () => {
-    if (newBancaName.trim()) {
-      addBanca(newBancaName);
+    if (newBancaName.trim() && newBancaBalance) {
+      addBanca(newBancaName, parseFloat(newBancaBalance) || 0);
       setIsDialogOpen(false);
       setNewBancaName('');
+      setNewBancaBalance('');
     }
   };
 
@@ -114,6 +117,16 @@ export function Header({ onNewEntry }: HeaderProps) {
                 value={newBancaName}
                 onChange={(e) => setNewBancaName(e.target.value)}
                 placeholder="Ex: 2025, Futebol, Esports..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="banca-balance">Valor inicial (R$)</Label>
+              <Input
+                id="banca-balance"
+                type="number"
+                value={newBancaBalance}
+                onChange={(e) => setNewBancaBalance(e.target.value)}
+                placeholder="Ex: 1000"
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateBanca()}
               />
             </div>
@@ -122,7 +135,7 @@ export function Header({ onNewEntry }: HeaderProps) {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateBanca} disabled={!newBancaName.trim()}>
+            <Button onClick={handleCreateBanca} disabled={!newBancaName.trim() || !newBancaBalance}>
               Criar Banca
             </Button>
           </DialogFooter>

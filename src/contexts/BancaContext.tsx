@@ -27,7 +27,7 @@ interface BancaContextType {
   bancas: Banca[];
   selectedBanca: Banca | null;
   setSelectedBanca: (banca: Banca) => void;
-  addBanca: (name: string) => void;
+  addBanca: (name: string, initialBalance?: number) => void;
   entradas: Entrada[];
   addEntradas: (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => void;
   getEntradasByBanca: () => Entrada[];
@@ -44,11 +44,11 @@ export function BancaProvider({ children }: { children: ReactNode }) {
   const [selectedBanca, setSelectedBanca] = useState<Banca>(bancas[1]);
   const [entradas, setEntradas] = useState<Entrada[]>([]);
 
-  const addBanca = (name: string) => {
+  const addBanca = (name: string, initialBalance: number = 0) => {
     const newBanca: Banca = {
       id: Date.now().toString(),
       name: name.trim(),
-      balance: 0,
+      balance: initialBalance,
     };
     setBancas([...bancas, newBanca]);
     setSelectedBanca(newBanca);
