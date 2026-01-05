@@ -21,6 +21,7 @@ interface BancaToEdit {
   id: string;
   name: string;
   balance: number;
+  initialBalance: number;
 }
 
 const Banca = () => {
@@ -34,6 +35,7 @@ const Banca = () => {
   const [bancaToEdit, setBancaToEdit] = useState<BancaToEdit | null>(null);
   const [editName, setEditName] = useState('');
   const [editBalance, setEditBalance] = useState('');
+  const [editInitialBalance, setEditInitialBalance] = useState('');
 
   const handleCreateBanca = () => {
     if (newBancaName.trim() && newBancaBalance) {
@@ -49,12 +51,13 @@ const Banca = () => {
     setBancaToEdit(banca);
     setEditName(banca.name);
     setEditBalance(banca.balance.toString());
+    setEditInitialBalance(banca.initialBalance.toString());
     setIsEditDialogOpen(true);
   };
 
   const handleEditBanca = () => {
-    if (bancaToEdit && editName.trim() && editBalance) {
-      editBanca(bancaToEdit.id, editName, parseFloat(editBalance) || 0);
+    if (bancaToEdit && editName.trim() && editBalance && editInitialBalance) {
+      editBanca(bancaToEdit.id, editName, parseFloat(editBalance) || 0, parseFloat(editInitialBalance) || 0);
       setIsEditDialogOpen(false);
       setBancaToEdit(null);
     }
@@ -179,7 +182,17 @@ const Banca = () => {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-balance">Valor (R$)</Label>
+                  <Label htmlFor="edit-initial-balance">Valor Inicial (R$)</Label>
+                  <Input 
+                    id="edit-initial-balance" 
+                    type="number"
+                    value={editInitialBalance}
+                    onChange={(e) => setEditInitialBalance(e.target.value)}
+                    placeholder="Ex: 1000"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-balance">Valor Atual (R$)</Label>
                   <Input 
                     id="edit-balance" 
                     type="number"
@@ -191,7 +204,7 @@ const Banca = () => {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleEditBanca} disabled={!editName.trim() || !editBalance}>Salvar</Button>
+                <Button onClick={handleEditBanca} disabled={!editName.trim() || !editBalance || !editInitialBalance}>Salvar</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

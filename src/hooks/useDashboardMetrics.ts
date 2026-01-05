@@ -92,8 +92,10 @@ export function useDashboardMetrics() {
     };
   }, [entradas, selectedBanca]);
 
-  // Generate bankroll history from entries
+  // Generate bankroll history from entries, starting from initialBalance
   const bankrollHistory = useMemo((): BankrollDataPoint[] => {
+    const initialBalance = selectedBanca?.initialBalance || 0;
+    
     if (entradas.length === 0) return [];
 
     // Sort entries by date
@@ -112,7 +114,8 @@ export function useDashboardMetrics() {
       dailyData.set(dateKey, current + entrada.lucro);
     });
 
-    let cumulativeValue = 0;
+    // Start from initial balance
+    let cumulativeValue = initialBalance;
     const history: BankrollDataPoint[] = [];
     
     dailyData.forEach((pnl, date) => {
@@ -126,7 +129,7 @@ export function useDashboardMetrics() {
     });
 
     return history;
-  }, [entradas]);
+  }, [entradas, selectedBanca]);
 
   // Generate daily PnL data
   const dailyPnL = useMemo((): DailyPnLDataPoint[] => {
@@ -161,6 +164,7 @@ export function useDashboardMetrics() {
   const monthlyStats = useMemo((): MonthlyStats[] => {
     if (entradas.length === 0) return [];
 
+    const initialBalance = selectedBanca?.initialBalance || 0;
     const monthlyData: Map<string, Entrada[]> = new Map();
     
     entradas.forEach(entrada => {
@@ -173,7 +177,7 @@ export function useDashboardMetrics() {
       monthlyData.get(monthKey)!.push(entrada);
     });
 
-    let cumulativeBankroll = 0;
+    let cumulativeBankroll = initialBalance;
     const stats: MonthlyStats[] = [];
 
     // Sort by date and process

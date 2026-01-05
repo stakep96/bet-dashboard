@@ -4,6 +4,7 @@ interface Banca {
   id: string;
   name: string;
   balance: number;
+  initialBalance: number;
 }
 
 export interface Entrada {
@@ -27,8 +28,8 @@ interface BancaContextType {
   bancas: Banca[];
   selectedBanca: Banca | null;
   setSelectedBanca: (banca: Banca) => void;
-  addBanca: (name: string, initialBalance?: number) => void;
-  editBanca: (id: string, name: string, balance: number) => void;
+  addBanca: (name: string, initialBalance: number) => void;
+  editBanca: (id: string, name: string, balance: number, initialBalance: number) => void;
   entradas: Entrada[];
   addEntradas: (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => void;
   getEntradasByBanca: () => Entrada[];
@@ -38,29 +39,30 @@ const BancaContext = createContext<BancaContextType | undefined>(undefined);
 
 export function BancaProvider({ children }: { children: ReactNode }) {
   const [bancas, setBancas] = useState<Banca[]>([
-    { id: '1', name: '2024', balance: 8500 },
-    { id: '2', name: '2025', balance: 12350.75 },
-    { id: '3', name: 'Futebol', balance: 3200 },
+    { id: '1', name: '2024', balance: 8500, initialBalance: 5000 },
+    { id: '2', name: '2025', balance: 12350.75, initialBalance: 10000 },
+    { id: '3', name: 'Futebol', balance: 3200, initialBalance: 2000 },
   ]);
   const [selectedBanca, setSelectedBanca] = useState<Banca>(bancas[1]);
   const [entradas, setEntradas] = useState<Entrada[]>([]);
 
-  const addBanca = (name: string, initialBalance: number = 0) => {
+  const addBanca = (name: string, initialBalance: number) => {
     const newBanca: Banca = {
       id: Date.now().toString(),
       name: name.trim(),
       balance: initialBalance,
+      initialBalance: initialBalance,
     };
     setBancas([...bancas, newBanca]);
     setSelectedBanca(newBanca);
   };
 
-  const editBanca = (id: string, name: string, balance: number) => {
+  const editBanca = (id: string, name: string, balance: number, initialBalance: number) => {
     setBancas(prev => prev.map(b => 
-      b.id === id ? { ...b, name: name.trim(), balance } : b
+      b.id === id ? { ...b, name: name.trim(), balance, initialBalance } : b
     ));
     if (selectedBanca?.id === id) {
-      setSelectedBanca({ ...selectedBanca, name: name.trim(), balance });
+      setSelectedBanca({ ...selectedBanca, name: name.trim(), balance, initialBalance });
     }
   };
   const addEntradas = (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => {
