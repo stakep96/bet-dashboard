@@ -60,7 +60,7 @@ export function StatsCard({
                 ) : (
                   <TrendingDown className="w-3 h-3" />
                 )}
-                {isPositive ? '+' : ''}{change}%
+                {isPositive ? '+' : ''}{change.toFixed(2)}%
               </span>
               {changeLabel && (
                 <span className="text-xs text-muted-foreground">{changeLabel}</span>

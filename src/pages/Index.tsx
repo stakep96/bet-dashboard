@@ -32,8 +32,8 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatsCard
               title="Banca Atual"
-              value={`R$ ${metrics.totalPnL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={metrics.totalStaked > 0 ? metrics.roi : undefined}
+              value={`R$ ${metrics.currentBankroll.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={metrics.roi}
               changeLabel="ROI total"
               icon={<Wallet className="w-4 h-4" />}
               variant={metrics.totalPnL >= 0 ? 'success' : 'danger'}
