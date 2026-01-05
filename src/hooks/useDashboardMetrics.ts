@@ -88,23 +88,25 @@ export function useDashboardMetrics() {
   }, [entradas, getTotalInitialBalance, getTotalBalance]);
 
   // Generate bankroll history from entries, starting from initialBalance
+  // Uses eventDate for statistics instead of registration date
   const bankrollHistory = useMemo((): BankrollDataPoint[] => {
     const initialBalance = getTotalInitialBalance();
     
     if (entradas.length === 0) return [];
 
-    // Sort entries by date
+    // Sort entries by event date (fall back to registration date if not available)
     const sortedEntradas = [...entradas].sort((a, b) => {
-      const dateA = parseEntradaDate(a.data);
-      const dateB = parseEntradaDate(b.data);
+      const dateA = parseEntradaDate(a.dataEvento || a.data);
+      const dateB = parseEntradaDate(b.dataEvento || b.data);
       return dateA.getTime() - dateB.getTime();
     });
 
-    // Group by date and calculate cumulative bankroll
+    // Group by event date and calculate cumulative bankroll
     const dailyData: Map<string, number> = new Map();
     
     sortedEntradas.forEach(entrada => {
-      const dateKey = entrada.data.split(' ')[0]; // Get just the date part
+      const dateStr = entrada.dataEvento || entrada.data;
+      const dateKey = dateStr.split(' ')[0]; // Get just the date part
       const current = dailyData.get(dateKey) || 0;
       dailyData.set(dateKey, current + entrada.lucro);
     });
@@ -126,20 +128,21 @@ export function useDashboardMetrics() {
     return history;
   }, [entradas, getTotalInitialBalance]);
 
-  // Generate daily PnL data
+  // Generate daily PnL data using event date
   const dailyPnL = useMemo((): DailyPnLDataPoint[] => {
     if (entradas.length === 0) return [];
 
     const sortedEntradas = [...entradas].sort((a, b) => {
-      const dateA = parseEntradaDate(a.data);
-      const dateB = parseEntradaDate(b.data);
+      const dateA = parseEntradaDate(a.dataEvento || a.data);
+      const dateB = parseEntradaDate(b.dataEvento || b.data);
       return dateA.getTime() - dateB.getTime();
     });
 
     const dailyData: Map<string, number> = new Map();
     
     sortedEntradas.forEach(entrada => {
-      const dateKey = entrada.data.split(' ')[0];
+      const dateStr = entrada.dataEvento || entrada.data;
+      const dateKey = dateStr.split(' ')[0];
       const current = dailyData.get(dateKey) || 0;
       dailyData.set(dateKey, current + entrada.lucro);
     });
@@ -155,7 +158,7 @@ export function useDashboardMetrics() {
     return result;
   }, [entradas]);
 
-  // Generate monthly stats
+  // Generate monthly stats using event date
   const monthlyStats = useMemo((): MonthlyStats[] => {
     if (entradas.length === 0) return [];
 
@@ -163,7 +166,8 @@ export function useDashboardMetrics() {
     const monthlyData: Map<string, Entrada[]> = new Map();
     
     entradas.forEach(entrada => {
-      const date = parseEntradaDate(entrada.data);
+      const dateStr = entrada.dataEvento || entrada.data;
+      const date = parseEntradaDate(dateStr);
       const monthKey = format(date, 'MMM yyyy', { locale: ptBR });
       
       if (!monthlyData.has(monthKey)) {
@@ -179,8 +183,8 @@ export function useDashboardMetrics() {
     const sortedMonths = Array.from(monthlyData.entries()).sort((a, b) => {
       const [, entriesA] = a;
       const [, entriesB] = b;
-      const dateA = parseEntradaDate(entriesA[0].data);
-      const dateB = parseEntradaDate(entriesB[0].data);
+      const dateA = parseEntradaDate(entriesA[0].dataEvento || entriesA[0].data);
+      const dateB = parseEntradaDate(entriesB[0].dataEvento || entriesB[0].data);
       return dateA.getTime() - dateB.getTime();
     });
 
@@ -217,12 +221,12 @@ export function useDashboardMetrics() {
     return stats;
   }, [entradas]);
 
-  // Recent bets (last 5)
+  // Recent bets (last 5) sorted by event date
   const recentBets = useMemo(() => {
     return [...entradas]
       .sort((a, b) => {
-        const dateA = parseEntradaDate(a.data);
-        const dateB = parseEntradaDate(b.data);
+        const dateA = parseEntradaDate(a.dataEvento || a.data);
+        const dateB = parseEntradaDate(b.dataEvento || b.data);
         return dateB.getTime() - dateA.getTime();
       })
       .slice(0, 5);

@@ -71,13 +71,21 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>Data</Label>
+              <Label>Data Cadastro</Label>
               <Input
                 type="date"
                 value={formData.data}
                 onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Data Evento</Label>
+              <Input
+                type="date"
+                value={formData.dataEvento || formData.data}
+                onChange={(e) => setFormData({ ...formData, dataEvento: e.target.value })}
               />
             </div>
             <div className="space-y-2">
