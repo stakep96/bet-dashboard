@@ -2,6 +2,18 @@ import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useBanca } from '@/contexts/BancaContext';
 import { useDashboardMetrics, filterByPeriod } from '@/hooks/useDashboardMetrics';
+import { format, parse } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const parseChartDate = (dateStr: string): Date | null => {
+  try {
+    const parsed = parse(dateStr, 'dd/MM', new Date());
+    if (!isNaN(parsed.getTime())) return parsed;
+    return null;
+  } catch {
+    return null;
+  }
+};
 
 type Period = '1W' | '1M' | '3M' | '6M' | '1Y';
 
@@ -97,17 +109,23 @@ export function DailyPnLChart() {
               tickFormatter={(value) => `R$${value >= 0 ? '' : '-'}${Math.abs(value / 1000).toFixed(1)}k`}
             />
             <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  const date = parseChartDate(data.date);
+                  const formattedDate = date ? format(date, "dd/MMM", { locale: ptBR }).replace('.', '') : data.date;
+                  const isPositive = data.pnl >= 0;
+                  return (
+                    <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                      <p className="text-xs text-muted-foreground mb-2">{formattedDate}</p>
+                      <p className={`text-sm font-semibold ${isPositive ? 'text-success' : 'text-destructive'}`}>
+                        PNL: R$ {isPositive ? '+' : ''}{data.pnl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
               }}
-              formatter={(value: number) => [
-                `R$ ${value >= 0 ? '+' : ''}${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 
-                'PNL'
-              ]}
-              labelFormatter={(label) => `Data: ${label}`}
             />
             <ReferenceLine y={0} stroke="hsl(var(--border))" strokeWidth={1} />
             <Bar 
