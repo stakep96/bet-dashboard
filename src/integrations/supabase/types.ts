@@ -51,6 +51,7 @@ export type Database = {
           betting_house: string | null
           created_at: string
           date: string
+          entry: string | null
           event: string
           id: string
           market: string | null
@@ -69,6 +70,7 @@ export type Database = {
           betting_house?: string | null
           created_at?: string
           date: string
+          entry?: string | null
           event: string
           id?: string
           market?: string | null
@@ -87,6 +89,7 @@ export type Database = {
           betting_house?: string | null
           created_at?: string
           date?: string
+          entry?: string | null
           event?: string
           id?: string
           market?: string | null
