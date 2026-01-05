@@ -636,9 +636,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
               Cancelar
             </Button>
             <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90">
-              {betType === 'combined' && selections.length > 1 
-                ? `Cadastrar ${selections.length} Entradas` 
-                : 'Cadastrar Entrada'}
+              Cadastrar Entrada
             </Button>
           </div>
         </form>
