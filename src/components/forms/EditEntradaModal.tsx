@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { X, Loader2, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Loader2, Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Entrada } from '@/contexts/BancaContext';
 import { bookmakers } from '@/data/bookmakers';
+import { BetModality, BetTiming, BetResult } from '@/types/bet';
 
 interface EditEntradaModalProps {
   entrada: Entrada;
@@ -16,8 +18,20 @@ interface EditEntradaModalProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-const modalities = ['FUTEBOL', 'MMA', 'BASQUETE', 'TÊNIS', 'ESPORTS', 'OUTRO'];
-const timings = ['PRÉ', 'LIVE'];
+interface BetSelection {
+  id: string;
+  match: string;
+  modality: BetModality | '';
+  market: string;
+  entry: string;
+  odd: string;
+  eventDate: string;
+  timing: BetTiming;
+}
+
+const modalities: BetModality[] = ['FUTEBOL', 'MMA', 'BASQUETE', 'TÊNIS', 'ESPORTS', 'OUTRO'];
+const timings: BetTiming[] = ['PRÉ', 'LIVE'];
+
 const markets = [
   'Total escanteios',
   'Resultado final',
@@ -29,15 +43,202 @@ const markets = [
   'Outro'
 ];
 
+const createEmptySelection = (): BetSelection => ({
+  id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+  match: '',
+  modality: '',
+  market: '',
+  entry: '',
+  odd: '',
+  eventDate: new Date().toISOString().split('T')[0],
+  timing: 'PRÉ',
+});
+
 export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEntradaModalProps) {
-  const [formData, setFormData] = useState<Entrada>(entrada);
+  const [betType, setBetType] = useState<'simple' | 'combined'>('simple');
+  const [selections, setSelections] = useState<BetSelection[]>([createEmptySelection()]);
+  const [expandedSelections, setExpandedSelections] = useState<Set<string>>(new Set());
+  
+  const [generalData, setGeneralData] = useState({
+    createdAt: entrada.data,
+    eventDate: entrada.dataEvento || entrada.data,
+    stake: entrada.stake.toString(),
+    result: 'Pendente' as 'G' | 'P' | 'C' | 'D' | 'Pendente',
+    bookmaker: entrada.site || '',
+    totalOdd: entrada.odd.toString(),
+  });
+
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // Parse entrada data on mount
+  useEffect(() => {
+    const isCombined = entrada.evento?.includes('|');
+    
+    if (isCombined) {
+      setBetType('combined');
+      
+      // Parse selections from concatenated fields
+      const events = entrada.evento?.split('|').map(s => s.trim()) || [];
+      const markets = entrada.mercado?.split('|').map(s => s.trim()) || [];
+      const entries = entrada.entrada?.split('|').map(s => s.trim()) || [];
+      const eventDates = entrada.dataEvento?.split('|').map(s => s.trim()) || [];
+      const timings = entrada.timing?.split('|').map(s => s.trim()) || [];
+      
+      const parsedSelections: BetSelection[] = events.map((event, index) => ({
+        id: Date.now().toString() + index,
+        match: event,
+        modality: (entrada.modalidade as BetModality) || '',
+        market: markets[index] || '',
+        entry: entries[index] || '',
+        odd: '',
+        eventDate: eventDates[index] || entrada.dataEvento || entrada.data,
+        timing: (timings[index] as BetTiming) || 'PRÉ'
+      }));
+      
+      setSelections(parsedSelections.length > 0 ? parsedSelections : [createEmptySelection()]);
+      if (parsedSelections.length > 0) {
+        setExpandedSelections(new Set([parsedSelections[0].id]));
+      }
+    } else {
+      setBetType('simple');
+      const sel: BetSelection = {
+        id: Date.now().toString(),
+        match: entrada.evento || '',
+        modality: (entrada.modalidade as BetModality) || '',
+        market: entrada.mercado || '',
+        entry: entrada.entrada || '',
+        odd: entrada.odd?.toString() || '',
+        eventDate: entrada.dataEvento || entrada.data,
+        timing: (entrada.timing as BetTiming) || 'PRÉ'
+      };
+      setSelections([sel]);
+      setExpandedSelections(new Set([sel.id]));
+    }
+    
+    setGeneralData({
+      createdAt: entrada.data,
+      eventDate: entrada.dataEvento || entrada.data,
+      stake: entrada.stake.toString(),
+      result: entrada.resultado,
+      bookmaker: entrada.site || '',
+      totalOdd: entrada.odd.toString(),
+    });
+  }, [entrada]);
+
+  const addSelection = () => {
+    const newSelection = createEmptySelection();
+    setSelections([...selections, newSelection]);
+    setExpandedSelections(prev => new Set([...prev, newSelection.id]));
+  };
+
+  const removeSelection = (id: string) => {
+    if (selections.length > 1) {
+      setSelections(selections.filter(s => s.id !== id));
+      setExpandedSelections(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+    }
+  };
+
+  const updateSelection = (id: string, field: keyof BetSelection, value: any) => {
+    setSelections(selections.map(s => 
+      s.id === id ? { ...s, [field]: value } : s
+    ));
+  };
+
+  const toggleExpanded = (id: string) => {
+    setExpandedSelections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const calculateTotalOdd = () => {
+    if (betType === 'simple') return parseFloat(selections[0]?.odd || '0');
+    
+    const odds = selections.map(s => parseFloat(s.odd || '0')).filter(o => o > 0);
+    if (odds.length === 0) return 0;
+    return odds.reduce((acc, odd) => acc * odd, 1);
+  };
+
+  const calculateProfit = (resultado: string, stake: number, odd: number): number => {
+    switch (resultado) {
+      case 'G': return stake * (odd - 1);
+      case 'P': return -stake;
+      case 'C': return 0;
+      case 'D': return 0;
+      default: return 0;
+    }
+  };
+
+  const handleResultadoChange = (value: 'G' | 'P' | 'C' | 'D' | 'Pendente') => {
+    setGeneralData(prev => ({ ...prev, result: value }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(formData);
+      const stake = parseFloat(generalData.stake) || 0;
+      const totalOdd = generalData.totalOdd ? parseFloat(generalData.totalOdd) : calculateTotalOdd();
+      const profit = calculateProfit(generalData.result, stake, totalOdd);
+
+      let updatedEntrada: Entrada;
+
+      if (betType === 'combined' && selections.length > 1) {
+        // Combined bet - merge all selections
+        const combinedEvent = selections.map(s => s.match).filter(Boolean).join(' | ');
+        const combinedMarket = selections.map(s => s.market).filter(Boolean).join(' | ');
+        const combinedEntry = selections.map(s => s.entry).filter(Boolean).join(' | ');
+        const combinedEventDates = selections.map(s => s.eventDate).filter(Boolean).join(' | ');
+        const combinedTimings = selections.map(s => s.timing).filter(Boolean).join(' | ');
+        const modality = selections[0]?.modality || 'OUTRO';
+
+        updatedEntrada = {
+          ...entrada,
+          data: generalData.createdAt,
+          dataEvento: combinedEventDates,
+          modalidade: modality,
+          evento: combinedEvent,
+          mercado: combinedMarket,
+          entrada: combinedEntry,
+          odd: totalOdd,
+          stake,
+          resultado: generalData.result,
+          lucro: profit,
+          timing: combinedTimings,
+          site: generalData.bookmaker,
+        };
+      } else {
+        // Simple bet
+        const selection = selections[0];
+        const odd = parseFloat(selection.odd) || parseFloat(generalData.totalOdd) || 0;
+
+        updatedEntrada = {
+          ...entrada,
+          data: generalData.createdAt,
+          dataEvento: selection.eventDate,
+          modalidade: selection.modality || 'OUTRO',
+          evento: selection.match,
+          mercado: selection.market,
+          entrada: selection.entry,
+          odd,
+          stake,
+          resultado: generalData.result,
+          lucro: calculateProfit(generalData.result, stake, odd),
+          timing: selection.timing,
+          site: generalData.bookmaker,
+        };
+      }
+
+      await onSave(updatedEntrada);
       toast.success('Entrada atualizada com sucesso!');
       onClose();
     } catch (error) {
@@ -62,26 +263,18 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     }
   };
 
-  const calculateProfit = (resultado: string, stake: number, odd: number): number => {
-    switch (resultado) {
-      case 'G': return stake * (odd - 1);
-      case 'P': return -stake;
-      case 'C': return 0;
-      case 'D': return 0;
-      default: return 0;
-    }
-  };
-
-  const handleResultadoChange = (value: 'G' | 'P' | 'C' | 'D' | 'Pendente') => {
-    const profit = calculateProfit(value, formData.stake, formData.odd);
-    setFormData({ ...formData, resultado: value, lucro: profit });
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 className="text-xl font-semibold">Editar Entrada</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">Editar Entrada</h2>
+            {betType === 'combined' && selections.length > 1 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {selections.length} seleções
+              </Badge>
+            )}
+          </div>
           <button 
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
@@ -91,99 +284,193 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Detalhes da Aposta */}
-          <div className="space-y-3">
-            <Label className="text-base">Detalhes da Aposta</Label>
-            <div className="border border-border rounded-xl overflow-hidden">
-              <div className="p-3 bg-muted/30">
-                <span className="text-sm font-medium">Detalhes da Aposta</span>
-              </div>
-              <div className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Modalidade</Label>
-                    <Select 
-                      value={formData.modalidade} 
-                      onValueChange={(v) => setFormData({ ...formData, modalidade: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {modalities.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Partida / Confronto</Label>
-                    <Input 
-                      placeholder="Ex: Flamengo x Palmeiras"
-                      value={formData.evento}
-                      onChange={(e) => setFormData({ ...formData, evento: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Mercado</Label>
-                    <Select 
-                      value={formData.mercado || ''} 
-                      onValueChange={(v) => setFormData({ ...formData, mercado: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {markets.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Entrada (Descrição)</Label>
-                    <Input 
-                      placeholder="Ex: Acima de 9.5"
-                      value={formData.entrada || ''}
-                      onChange={(e) => setFormData({ ...formData, entrada: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Odd</Label>
-                    <Input 
-                      type="number"
-                      step="0.01"
-                      min="1"
-                      placeholder="1.85"
-                      value={formData.odd}
-                      onChange={(e) => setFormData({ ...formData, odd: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>PRÉ / LIVE</Label>
-                    <Select 
-                      value={formData.timing || 'PRÉ'} 
-                      onValueChange={(v) => setFormData({ ...formData, timing: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timings.map((t) => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+          {/* Tipo de Aposta */}
+          <div className="space-y-2">
+            <Label>Tipo de Aposta</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={betType === 'simple' ? 'default' : 'outline'}
+                className="flex-1"
+                onClick={() => {
+                  setBetType('simple');
+                  setSelections([selections[0] || createEmptySelection()]);
+                }}
+              >
+                Simples
+              </Button>
+              <Button
+                type="button"
+                variant={betType === 'combined' ? 'default' : 'outline'}
+                className="flex-1"
+                onClick={() => setBetType('combined')}
+              >
+                Múltipla / Bet Builder
+              </Button>
             </div>
+          </div>
+
+          {/* Seleções */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Seleções</Label>
+              {betType === 'combined' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSelection}
+                  className="gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar
+                </Button>
+              )}
+            </div>
+
+            {selections.map((selection, index) => (
+              <div 
+                key={selection.id}
+                className="border border-border rounded-xl overflow-hidden"
+              >
+                {/* Selection Header */}
+                <div 
+                  className={`flex items-center justify-between p-3 bg-muted/30 cursor-pointer ${betType === 'combined' ? 'hover:bg-muted/50' : ''}`}
+                  onClick={() => betType === 'combined' && toggleExpanded(selection.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    {betType === 'combined' && (
+                      expandedSelections.has(selection.id) ? (
+                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      )
+                    )}
+                    <span className="text-sm font-medium">
+                      {betType === 'combined' ? `Seleção ${index + 1}` : 'Detalhes da Aposta'}
+                    </span>
+                    {selection.match && !expandedSelections.has(selection.id) && (
+                      <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        — {selection.match}
+                      </span>
+                    )}
+                  </div>
+                  {betType === 'combined' && selections.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSelection(selection.id);
+                      }}
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Selection Fields */}
+                {(betType === 'simple' || expandedSelections.has(selection.id)) && (
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Modalidade</Label>
+                        <Select 
+                          value={selection.modality} 
+                          onValueChange={(v) => updateSelection(selection.id, 'modality', v as BetModality)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {modalities.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Partida / Confronto</Label>
+                        <Input 
+                          placeholder="Ex: Flamengo x Palmeiras"
+                          value={selection.match}
+                          onChange={(e) => updateSelection(selection.id, 'match', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Mercado</Label>
+                        <Select 
+                          value={selection.market} 
+                          onValueChange={(v) => updateSelection(selection.id, 'market', v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {markets.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Entrada (Descrição)</Label>
+                        <Input 
+                          placeholder="Ex: Acima de 9.5"
+                          value={selection.entry}
+                          onChange={(e) => updateSelection(selection.id, 'entry', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className={`grid ${betType === 'combined' ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
+                      <div className="space-y-2">
+                        <Label>Odd {betType === 'combined' ? '(individual)' : ''}</Label>
+                        <Input 
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          placeholder="1.85"
+                          value={selection.odd}
+                          onChange={(e) => updateSelection(selection.id, 'odd', e.target.value)}
+                        />
+                      </div>
+                      {betType === 'combined' && (
+                        <div className="space-y-2">
+                          <Label>Data do Evento</Label>
+                          <Input 
+                            type="date"
+                            value={selection.eventDate}
+                            onChange={(e) => updateSelection(selection.id, 'eventDate', e.target.value)}
+                          />
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label>PRÉ / LIVE</Label>
+                        <Select 
+                          value={selection.timing} 
+                          onValueChange={(v) => updateSelection(selection.id, 'timing', v as BetTiming)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timings.map((t) => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Dados Gerais */}
@@ -195,24 +482,30 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                 <Label>Data do Cadastro</Label>
                 <Input 
                   type="date"
-                  value={formData.data}
-                  onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                  value={generalData.createdAt}
+                  onChange={(e) => setGeneralData({ ...generalData, createdAt: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Data do Evento</Label>
                 <Input 
                   type="date"
-                  value={formData.dataEvento || formData.data}
-                  onChange={(e) => setFormData({ ...formData, dataEvento: e.target.value })}
+                  value={betType === 'simple' ? selections[0]?.eventDate : generalData.eventDate}
+                  onChange={(e) => {
+                    if (betType === 'simple') {
+                      updateSelection(selections[0]?.id, 'eventDate', e.target.value);
+                    } else {
+                      setGeneralData({ ...generalData, eventDate: e.target.value });
+                    }
+                  }}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Casa de Apostas</Label>
                 <Combobox
                   options={bookmakers}
-                  value={formData.site || ''}
-                  onValueChange={(v) => setFormData({ ...formData, site: v })}
+                  value={generalData.bookmaker}
+                  onValueChange={(v) => setGeneralData({ ...generalData, bookmaker: v })}
                   placeholder="Selecione o site"
                   searchPlaceholder="Buscar site..."
                   emptyText="Nenhum site encontrado."
@@ -230,23 +523,27 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                   step="0.01"
                   min="0"
                   placeholder="100.00"
-                  value={formData.stake}
-                  onChange={(e) => setFormData({ ...formData, stake: parseFloat(e.target.value) || 0 })}
+                  value={generalData.stake}
+                  onChange={(e) => setGeneralData({ ...generalData, stake: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Lucro/Prejuízo (R$)</Label>
-                <Input 
-                  type="number"
-                  step="0.01"
-                  value={formData.lucro}
-                  onChange={(e) => setFormData({ ...formData, lucro: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="space-y-2">
+              {betType === 'combined' && (
+                <div className="space-y-2">
+                  <Label>Odd Total</Label>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    placeholder={calculateTotalOdd().toFixed(2)}
+                    value={generalData.totalOdd}
+                    onChange={(e) => setGeneralData({ ...generalData, totalOdd: e.target.value })}
+                  />
+                </div>
+              )}
+              <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
                 <Label>Resultado</Label>
                 <Select 
-                  value={formData.resultado} 
+                  value={generalData.result} 
                   onValueChange={(v) => handleResultadoChange(v as any)}
                 >
                   <SelectTrigger>
