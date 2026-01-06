@@ -466,13 +466,15 @@ const Saldos = () => {
                       {/* Deposit/Withdraw side by side */}
                       <div className="mt-4 pt-3 border-t border-border flex gap-2">
                         <div className="flex gap-1 flex-1">
-                          <Input 
-                            type="number" 
-                            placeholder="Dep."
-                            value={depositAmounts[saldo.id] || ''}
-                            onChange={(e) => setDepositAmounts(prev => ({ ...prev, [saldo.id]: e.target.value }))}
-                            className="h-7 text-xs px-2"
-                          />
+                          <div className="relative flex-1">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                            <Input 
+                              type="number" 
+                              value={depositAmounts[saldo.id] || ''}
+                              onChange={(e) => setDepositAmounts(prev => ({ ...prev, [saldo.id]: e.target.value }))}
+                              className="h-7 text-xs pl-7 pr-2"
+                            />
+                          </div>
                           <Button 
                             size="icon"
                             className="bg-green-500 hover:bg-green-600 h-8 w-8 rounded-lg shrink-0"
@@ -487,13 +489,15 @@ const Saldos = () => {
                           </Button>
                         </div>
                         <div className="flex gap-1 flex-1">
-                          <Input 
-                            type="number" 
-                            placeholder="Saq."
-                            value={withdrawAmounts[saldo.id] || ''}
-                            onChange={(e) => setWithdrawAmounts(prev => ({ ...prev, [saldo.id]: e.target.value }))}
-                            className="h-7 text-xs px-2"
-                          />
+                          <div className="relative flex-1">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                            <Input 
+                              type="number" 
+                              value={withdrawAmounts[saldo.id] || ''}
+                              onChange={(e) => setWithdrawAmounts(prev => ({ ...prev, [saldo.id]: e.target.value }))}
+                              className="h-7 text-xs pl-7 pr-2"
+                            />
+                          </div>
                           <Button 
                             size="icon"
                             variant="destructive"
