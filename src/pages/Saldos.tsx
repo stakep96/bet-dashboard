@@ -24,6 +24,7 @@ interface Saldo {
   name: string;
   currentBalance: number;
   initialBalance: number;
+  bancaId: string | null;
 }
 
 interface SaldoTransacao {
@@ -36,7 +37,8 @@ interface SaldoTransacao {
 
 const Saldos = () => {
   const { user } = useAuth();
-  const { entradas } = useBanca();
+  const { entradas, selectedBancaIds, bancas, isVisaoGeral, getSelectedBancas } = useBanca();
+  const selectedBancas = getSelectedBancas();
   
   const [saldos, setSaldos] = useState<Saldo[]>([]);
   const [transacoes, setTransacoes] = useState<SaldoTransacao[]>([]);
@@ -91,7 +93,8 @@ const Saldos = () => {
         id: s.id,
         name: s.name,
         currentBalance: Number(s.current_balance),
-        initialBalance: Number(s.initial_balance)
+        initialBalance: Number(s.initial_balance),
+        bancaId: s.banca_id
       })));
       
       setTransacoes(transacoesRes.data.map(t => ({
@@ -115,6 +118,10 @@ const Saldos = () => {
 
   const handleCreateSaldo = async () => {
     if (!user || !newSiteName.trim() || !newSiteBalance) return;
+    if (isVisaoGeral || selectedBancaIds.length !== 1) {
+      toast.error('Selecione uma banca específica para adicionar um site');
+      return;
+    }
     
     setIsCreating(true);
     try {
@@ -123,7 +130,8 @@ const Saldos = () => {
         user_id: user.id,
         name: newSiteName.trim(),
         initial_balance: initialBalance,
-        current_balance: initialBalance
+        current_balance: initialBalance,
+        banca_id: selectedBancaIds[0]
       });
       
       if (error) throw error;
@@ -279,6 +287,18 @@ const Saldos = () => {
     }
   };
 
+  // Filtrar saldos por banca selecionada
+  const filteredSaldos = useMemo(() => {
+    if (isVisaoGeral) {
+      // Na visão geral, mostrar todos os saldos das bancas selecionadas
+      return saldos.filter(s => s.bancaId && selectedBancaIds.includes(s.bancaId));
+    }
+    if (selectedBancaIds.length === 1) {
+      return saldos.filter(s => s.bancaId === selectedBancaIds[0]);
+    }
+    return saldos;
+  }, [saldos, selectedBancaIds, isVisaoGeral]);
+
   // Calcular saldo atual considerando transações e bets
   const getCalculatedBalance = (saldo: Saldo) => {
     const normalized = saldo.name.toLowerCase().trim();
@@ -315,7 +335,7 @@ const Saldos = () => {
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2" disabled={isVisaoGeral || selectedBancaIds.length !== 1}>
                   <Plus className="h-4 w-4" />
                   Novo Site
                 </Button>
@@ -357,17 +377,17 @@ const Saldos = () => {
           </div>
 
           {/* Saldos Cards */}
-          {saldos.length === 0 ? (
+          {filteredSaldos.length === 0 ? (
             <Card className="mb-6">
               <CardContent className="py-12 text-center text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum site adicionado ainda.</p>
-                <p className="text-sm mt-1">Clique em "Novo Site" para começar.</p>
+                <p>Nenhum site adicionado {selectedBancas.length === 1 ? `para ${selectedBancas[0].name}` : 'ainda'}.</p>
+                <p className="text-sm mt-1">{isVisaoGeral ? 'Selecione uma banca específica para adicionar sites.' : 'Clique em "Novo Site" para começar.'}</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {saldos.map((saldo) => {
+              {filteredSaldos.map((saldo) => {
                 const calculatedBalance = getCalculatedBalance(saldo);
                 const roi = getROI(saldo);
                 const isPositive = roi >= 0;
