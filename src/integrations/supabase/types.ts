@@ -145,6 +145,7 @@ export type Database = {
       saldo_transacoes: {
         Row: {
           amount: number
+          banca_id: string | null
           created_at: string
           id: string
           saldo_id: string
@@ -153,6 +154,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          banca_id?: string | null
           created_at?: string
           id?: string
           saldo_id: string
@@ -161,6 +163,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          banca_id?: string | null
           created_at?: string
           id?: string
           saldo_id?: string
@@ -168,6 +171,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "saldo_transacoes_banca_id_fkey"
+            columns: ["banca_id"]
+            isOneToOne: false
+            referencedRelation: "bancas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "saldo_transacoes_saldo_id_fkey"
             columns: ["saldo_id"]
@@ -179,6 +189,7 @@ export type Database = {
       }
       saldos: {
         Row: {
+          banca_id: string | null
           created_at: string
           current_balance: number
           id: string
@@ -188,6 +199,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          banca_id?: string | null
           created_at?: string
           current_balance?: number
           id?: string
@@ -197,6 +209,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          banca_id?: string | null
           created_at?: string
           current_balance?: number
           id?: string
@@ -205,7 +218,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saldos_banca_id_fkey"
+            columns: ["banca_id"]
+            isOneToOne: false
+            referencedRelation: "bancas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
