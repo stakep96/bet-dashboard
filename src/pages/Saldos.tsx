@@ -331,6 +331,14 @@ const Saldos = () => {
     return ((calculatedBalance - saldo.initialBalance) / saldo.initialBalance) * 100;
   };
 
+  // Calcular totais agregados de todos os saldos filtrados
+  const totals = useMemo(() => {
+    const totalBalance = filteredSaldos.reduce((sum, s) => sum + getCalculatedBalance(s), 0);
+    const totalInitial = filteredSaldos.reduce((sum, s) => sum + s.initialBalance, 0);
+    const totalROI = totalInitial > 0 ? ((totalBalance - totalInitial) / totalInitial) * 100 : 0;
+    return { totalBalance, totalInitial, totalROI };
+  }, [filteredSaldos, betsByHouseAndBanca]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -406,6 +414,26 @@ const Saldos = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6">
+              {/* Card de Total */}
+              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs font-medium text-primary">Saldo Total</CardTitle>
+                </CardHeader>
+                <CardContent className="py-2 px-3">
+                  <div className="text-lg font-bold text-foreground">
+                    R$ {totals.totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                    <span>Inicial: R$ {totals.totalInitial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span className={totals.totalROI >= 0 ? 'text-green-500' : 'text-red-500'}>
+                      {totals.totalROI >= 0 ? '+' : ''}{totals.totalROI.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-primary/20 text-xs text-muted-foreground text-center">
+                    {filteredSaldos.length} site{filteredSaldos.length !== 1 ? 's' : ''}
+                  </div>
+                </CardContent>
+              </Card>
               {filteredSaldos.map((saldo) => {
                 const calculatedBalance = getCalculatedBalance(saldo);
                 const roi = getROI(saldo);
