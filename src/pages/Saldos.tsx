@@ -474,15 +474,15 @@ const Saldos = () => {
                             className="h-7 text-xs px-2"
                           />
                           <Button 
-                            size="sm" 
-                            className="bg-green-500 hover:bg-green-600 h-7 w-7 p-0"
+                            size="icon"
+                            className="bg-green-500 hover:bg-green-600 h-8 w-8 rounded-lg shrink-0"
                             onClick={() => handleDeposit(saldo.id)}
                             disabled={processingDeposit === saldo.id}
                           >
                             {processingDeposit === saldo.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <ArrowUpRight className="h-3 w-3" />
+                              <ArrowUpRight className="h-4 w-4" />
                             )}
                           </Button>
                         </div>
@@ -495,16 +495,16 @@ const Saldos = () => {
                             className="h-7 text-xs px-2"
                           />
                           <Button 
-                            size="sm" 
+                            size="icon"
                             variant="destructive"
-                            className="h-7 w-7 p-0"
+                            className="h-8 w-8 rounded-lg shrink-0"
                             onClick={() => handleWithdraw(saldo.id)}
                             disabled={processingWithdraw === saldo.id}
                           >
                             {processingWithdraw === saldo.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <ArrowDownRight className="h-3 w-3" />
+                              <ArrowDownRight className="h-4 w-4" />
                             )}
                           </Button>
                         </div>
