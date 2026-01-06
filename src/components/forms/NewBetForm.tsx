@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Combobox } from '@/components/ui/combobox';
-import { BetModality, BetTiming, BetResult } from '@/types/bet';
+import { BetTiming, BetResult } from '@/types/bet';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { bookmakers } from '@/data/bookmakers';
+import { modalities } from '@/data/modalities';
 
 interface NewBetFormProps {
   onClose: () => void;
@@ -23,7 +24,7 @@ interface NewBetFormProps {
 interface BetSelection {
   id: string;
   match: string;
-  modality: BetModality | '';
+  modality: string;
   market: string;
   entry: string;
   odd: string;
@@ -31,7 +32,6 @@ interface BetSelection {
   timing: BetTiming;
 }
 
-const modalities: BetModality[] = ['FUTEBOL', 'MMA', 'BASQUETE', 'TÊNIS', 'ESPORTS', 'OUTRO'];
 const timings: BetTiming[] = ['PRÉ', 'LIVE'];
 const results: BetResult[] = ['GREEN', 'RED', 'CASHOUT', 'DEVOLVIDA', 'PENDING'];
 
@@ -458,19 +458,16 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Modalidade</Label>
-                        <Select 
-                          value={selection.modality} 
-                          onValueChange={(v) => updateSelection(selection.id, 'modality', v as BetModality)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {modalities.map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Combobox
+                          options={modalities}
+                          value={selection.modality}
+                          onValueChange={(v) => updateSelection(selection.id, 'modality', v)}
+                          placeholder="Selecione a modalidade"
+                          searchPlaceholder="Buscar modalidade..."
+                          emptyText="Nenhuma modalidade encontrada."
+                          allowCustom={true}
+                          customLabel="Adicionar"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Partida / Confronto</Label>
