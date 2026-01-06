@@ -292,17 +292,29 @@ const Saldos = () => {
     }
   };
 
-  // Filtrar saldos por banca selecionada
+  // Filtrar saldos por banca selecionada e ordenar por saldo calculado (maior para menor)
   const filteredSaldos = useMemo(() => {
+    let filtered: Saldo[];
     if (isVisaoGeral) {
-      // Na visão geral, mostrar todos os saldos das bancas selecionadas
-      return saldos.filter(s => s.bancaId && selectedBancaIds.includes(s.bancaId));
+      filtered = saldos.filter(s => s.bancaId && selectedBancaIds.includes(s.bancaId));
+    } else if (selectedBancaIds.length === 1) {
+      filtered = saldos.filter(s => s.bancaId === selectedBancaIds[0]);
+    } else {
+      filtered = saldos;
     }
-    if (selectedBancaIds.length === 1) {
-      return saldos.filter(s => s.bancaId === selectedBancaIds[0]);
-    }
-    return saldos;
-  }, [saldos, selectedBancaIds, isVisaoGeral]);
+    
+    // Ordenar por saldo calculado (maior para menor)
+    return filtered.sort((a, b) => {
+      const getBalance = (saldo: Saldo) => {
+        if (!saldo.bancaId) return saldo.currentBalance;
+        const normalized = saldo.name.toLowerCase().trim();
+        const bancaMap = betsByHouseAndBanca.get(saldo.bancaId);
+        const betPnL = bancaMap?.get(normalized) || 0;
+        return saldo.currentBalance + betPnL;
+      };
+      return getBalance(b) - getBalance(a);
+    });
+  }, [saldos, selectedBancaIds, isVisaoGeral, betsByHouseAndBanca]);
 
   // Calcular saldo atual considerando transações e bets apenas da mesma banca
   const getCalculatedBalance = (saldo: Saldo) => {
@@ -393,7 +405,7 @@ const Saldos = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6">
               {filteredSaldos.map((saldo) => {
                 const calculatedBalance = getCalculatedBalance(saldo);
                 const roi = getROI(saldo);
@@ -401,47 +413,41 @@ const Saldos = () => {
                 
                 return (
                   <Card key={saldo.id} className="transition-all hover:shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                      <CardTitle className="text-sm font-medium">{saldo.name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => handleOpenEditDialog(saldo, e)}
-                        >
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                      </div>
+                    <CardHeader className="flex flex-row items-center justify-between py-2 px-3">
+                      <CardTitle className="text-xs font-medium truncate">{saldo.name}</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => handleOpenEditDialog(saldo, e)}
+                      >
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
                     </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-foreground">
+                    <CardContent className="py-2 px-3">
+                      <div className="text-lg font-bold text-foreground">
                         R$ {calculatedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        Inicial: R$ {saldo.initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <TrendingUp className={`h-4 w-4 ${isPositive ? 'text-green-500' : 'text-red-500'}`} />
-                        <span className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                          {isPositive ? '+' : ''}{roi.toFixed(2)}% ROI
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                        <span>Inicial: R$ {saldo.initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className={isPositive ? 'text-green-500' : 'text-red-500'}>
+                          {isPositive ? '+' : ''}{roi.toFixed(1)}%
                         </span>
                       </div>
                       
-                      {/* Deposit/Withdraw inline */}
-                      <div className="mt-4 pt-4 border-t border-border space-y-3">
-                        <div className="flex gap-2">
+                      {/* Deposit/Withdraw side by side */}
+                      <div className="mt-3 pt-2 border-t border-border flex gap-2">
+                        <div className="flex gap-1 flex-1">
                           <Input 
                             type="number" 
-                            placeholder="Depositar"
+                            placeholder="Dep."
                             value={depositAmounts[saldo.id] || ''}
                             onChange={(e) => setDepositAmounts(prev => ({ ...prev, [saldo.id]: e.target.value }))}
-                            className="h-8 text-sm"
+                            className="h-7 text-xs px-2"
                           />
                           <Button 
                             size="sm" 
-                            className="bg-green-500 hover:bg-green-600 h-8 px-3"
+                            className="bg-green-500 hover:bg-green-600 h-7 w-7 p-0"
                             onClick={() => handleDeposit(saldo.id)}
                             disabled={processingDeposit === saldo.id}
                           >
@@ -452,18 +458,18 @@ const Saldos = () => {
                             )}
                           </Button>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 flex-1">
                           <Input 
                             type="number" 
-                            placeholder="Sacar"
+                            placeholder="Saq."
                             value={withdrawAmounts[saldo.id] || ''}
                             onChange={(e) => setWithdrawAmounts(prev => ({ ...prev, [saldo.id]: e.target.value }))}
-                            className="h-8 text-sm"
+                            className="h-7 text-xs px-2"
                           />
                           <Button 
                             size="sm" 
                             variant="destructive"
-                            className="h-8 px-3"
+                            className="h-7 w-7 p-0"
                             onClick={() => handleWithdraw(saldo.id)}
                             disabled={processingWithdraw === saldo.id}
                           >
