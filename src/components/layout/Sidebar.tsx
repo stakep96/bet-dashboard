@@ -2,7 +2,8 @@ import {
   LayoutDashboard, 
   TrendingUp, 
   List, 
-  Wallet, 
+  Wallet,
+  Building2,
   Settings, 
   HelpCircle,
   ChevronUp,
@@ -27,6 +28,7 @@ const mainNavItems: NavItem[] = [
   { icon: TrendingUp, label: 'Estatísticas', path: '/estatisticas' },
   { icon: List, label: 'Entradas', path: '/entradas' },
   { icon: Wallet, label: 'Banca', path: '/banca' },
+  { icon: Building2, label: 'Saldos', path: '/saldos' },
 ];
 
 const bottomNavItems: NavItem[] = [

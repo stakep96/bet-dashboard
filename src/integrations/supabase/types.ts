@@ -142,6 +142,71 @@ export type Database = {
         }
         Relationships: []
       }
+      saldo_transacoes: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          saldo_id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          saldo_id: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          saldo_id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saldo_transacoes_saldo_id_fkey"
+            columns: ["saldo_id"]
+            isOneToOne: false
+            referencedRelation: "saldos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saldos: {
+        Row: {
+          created_at: string
+          current_balance: number
+          id: string
+          initial_balance: number
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number
+          id?: string
+          initial_balance?: number
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          id?: string
+          initial_balance?: number
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
