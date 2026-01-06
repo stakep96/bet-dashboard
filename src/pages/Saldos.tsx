@@ -65,13 +65,18 @@ const Saldos = () => {
   const [processingDeposit, setProcessingDeposit] = useState<string | null>(null);
   const [processingWithdraw, setProcessingWithdraw] = useState<string | null>(null);
 
-  // Calcular totais por casa de aposta (site) das entradas
-  const betsByHouse = useMemo(() => {
-    const result = new Map<string, number>();
+  // Calcular totais por casa de aposta (site) por banca das entradas
+  const betsByHouseAndBanca = useMemo(() => {
+    // Map<bancaId, Map<siteName, totalProfit>>
+    const result = new Map<string, Map<string, number>>();
     for (const e of entradas) {
-      if (e.site && e.lucro !== undefined) {
+      if (e.site && e.lucro !== undefined && e.bancaId) {
         const normalized = e.site.toLowerCase().trim();
-        result.set(normalized, (result.get(normalized) || 0) + e.lucro);
+        if (!result.has(e.bancaId)) {
+          result.set(e.bancaId, new Map());
+        }
+        const bancaMap = result.get(e.bancaId)!;
+        bancaMap.set(normalized, (bancaMap.get(normalized) || 0) + e.lucro);
       }
     }
     return result;
@@ -299,10 +304,12 @@ const Saldos = () => {
     return saldos;
   }, [saldos, selectedBancaIds, isVisaoGeral]);
 
-  // Calcular saldo atual considerando transações e bets
+  // Calcular saldo atual considerando transações e bets apenas da mesma banca
   const getCalculatedBalance = (saldo: Saldo) => {
+    if (!saldo.bancaId) return saldo.currentBalance;
     const normalized = saldo.name.toLowerCase().trim();
-    const betPnL = betsByHouse.get(normalized) || 0;
+    const bancaMap = betsByHouseAndBanca.get(saldo.bancaId);
+    const betPnL = bancaMap?.get(normalized) || 0;
     return saldo.currentBalance + betPnL;
   };
 
