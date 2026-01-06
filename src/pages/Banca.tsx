@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { Wallet, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, History, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Wallet, Plus, TrendingUp, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useBanca } from '@/contexts/BancaContext';
 import { toast } from 'sonner';
 
@@ -30,7 +30,6 @@ const Banca = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBancaName, setNewBancaName] = useState('');
   const [newBancaBalance, setNewBancaBalance] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [bancaToEdit, setBancaToEdit] = useState<BancaToEdit | null>(null);
   const [editName, setEditName] = useState('');
@@ -290,58 +289,6 @@ const Banca = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ArrowUpRight className="h-5 w-5 text-green-500" />
-                  Depositar
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input 
-                    type="number" 
-                    placeholder="Valor do depósito"
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                  />
-                  <Button className="bg-green-500 hover:bg-green-600">Depositar</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ArrowDownRight className="h-5 w-5 text-red-500" />
-                  Sacar
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2">
-                  <Input type="number" placeholder="Valor do saque" />
-                  <Button variant="destructive">Sacar</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Transaction History */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
-                Histórico de Transações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Histórico de transações em breve.</p>
-              </div>
-            </CardContent>
-          </Card>
         </main>
       </div>
     </div>
