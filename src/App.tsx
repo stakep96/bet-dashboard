@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Estatisticas from "./pages/Estatisticas";
 import Entradas from "./pages/Entradas";
 import Banca from "./pages/Banca";
+import Saldos from "./pages/Saldos";
 import Configuracoes from "./pages/Configuracoes";
 import Suporte from "./pages/Suporte";
 import Auth from "./pages/Auth";
@@ -44,6 +45,7 @@ function AppRoutes() {
         <Route path="/estatisticas" element={<ProtectedRoute><Estatisticas /></ProtectedRoute>} />
         <Route path="/entradas" element={<ProtectedRoute><Entradas /></ProtectedRoute>} />
         <Route path="/banca" element={<ProtectedRoute><Banca /></ProtectedRoute>} />
+        <Route path="/saldos" element={<ProtectedRoute><Saldos /></ProtectedRoute>} />
         <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
         <Route path="/suporte" element={<ProtectedRoute><Suporte /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
