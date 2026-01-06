@@ -416,20 +416,20 @@ const Saldos = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6">
               {/* Card de Total */}
               <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-                <CardHeader className="py-2 px-3">
-                  <CardTitle className="text-xs font-medium text-primary">Saldo Total</CardTitle>
+                <CardHeader className="py-4 px-5 pb-2">
+                  <CardTitle className="text-sm font-medium text-primary">Saldo Total</CardTitle>
                 </CardHeader>
-                <CardContent className="py-2 px-3">
-                  <div className="text-lg font-bold text-foreground">
+                <CardContent className="py-3 px-5 pt-0">
+                  <div className="text-xl font-bold text-foreground">
                     R$ {totals.totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                     <span>Inicial: R$ {totals.totalInitial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     <span className={totals.totalROI >= 0 ? 'text-green-500' : 'text-red-500'}>
                       {totals.totalROI >= 0 ? '+' : ''}{totals.totalROI.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="mt-3 pt-2 border-t border-primary/20 text-xs text-muted-foreground text-center">
+                  <div className="mt-4 pt-3 border-t border-primary/20 text-xs text-muted-foreground text-center">
                     {filteredSaldos.length} site{filteredSaldos.length !== 1 ? 's' : ''}
                   </div>
                 </CardContent>
@@ -441,22 +441,22 @@ const Saldos = () => {
                 
                 return (
                   <Card key={saldo.id} className="transition-all hover:shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between py-2 px-3">
-                      <CardTitle className="text-xs font-medium truncate">{saldo.name}</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between py-4 px-5 pb-2">
+                      <CardTitle className="text-sm font-medium truncate">{saldo.name}</CardTitle>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-7 w-7"
                         onClick={(e) => handleOpenEditDialog(saldo, e)}
                       >
-                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
                     </CardHeader>
-                    <CardContent className="py-2 px-3">
-                      <div className="text-lg font-bold text-foreground">
+                    <CardContent className="py-3 px-5 pt-0">
+                      <div className="text-xl font-bold text-foreground">
                         R$ {calculatedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                         <span>Inicial: R$ {saldo.initialBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                         <span className={isPositive ? 'text-green-500' : 'text-red-500'}>
                           {isPositive ? '+' : ''}{roi.toFixed(1)}%
@@ -464,7 +464,7 @@ const Saldos = () => {
                       </div>
                       
                       {/* Deposit/Withdraw side by side */}
-                      <div className="mt-3 pt-2 border-t border-border flex gap-2">
+                      <div className="mt-4 pt-3 border-t border-border flex gap-2">
                         <div className="flex gap-1 flex-1">
                           <Input 
                             type="number" 
