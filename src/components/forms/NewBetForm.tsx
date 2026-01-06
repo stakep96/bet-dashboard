@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { bookmakers } from '@/data/bookmakers';
 import { modalities } from '@/data/modalities';
+import { markets } from '@/data/markets';
 
 interface NewBetFormProps {
   onClose: () => void;
@@ -35,16 +36,6 @@ interface BetSelection {
 const timings: BetTiming[] = ['PRÉ', 'LIVE'];
 const results: BetResult[] = ['GREEN', 'RED', 'CASHOUT', 'DEVOLVIDA', 'PENDING'];
 
-const markets = [
-  'Total escanteios',
-  'Resultado final',
-  'Ambas marcam',
-  'Total gols',
-  'Handicap',
-  'Vencedor',
-  'Over/Under',
-  'Outro'
-];
 
 const createEmptySelection = (): BetSelection => ({
   id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -483,19 +474,16 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Mercado</Label>
-                        <Select 
-                          value={selection.market} 
+                        <Combobox
+                          options={markets}
+                          value={selection.market}
                           onValueChange={(v) => updateSelection(selection.id, 'market', v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {markets.map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Selecione o mercado"
+                          searchPlaceholder="Buscar mercado..."
+                          emptyText="Nenhum mercado encontrado."
+                          allowCustom={true}
+                          customLabel="Adicionar"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Entrada (Descrição)</Label>
