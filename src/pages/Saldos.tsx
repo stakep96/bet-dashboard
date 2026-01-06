@@ -13,11 +13,13 @@ import {
   DialogFooter,
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { Building2, Plus, TrendingUp, ArrowUpRight, ArrowDownRight, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Plus, ArrowUpRight, ArrowDownRight, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBanca } from '@/contexts/BancaContext';
 import { toast } from 'sonner';
+import { Combobox } from '@/components/ui/combobox';
+import { bookmakers } from '@/data/bookmakers';
 
 interface Saldo {
   id: string;
@@ -374,11 +376,15 @@ const Saldos = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="name">Nome do Site</Label>
-                    <Input 
-                      id="name" 
+                    <Combobox
+                      options={bookmakers}
                       value={newSiteName}
-                      onChange={(e) => setNewSiteName(e.target.value)}
-                      placeholder="Ex: Bet365, Betano, Sportingbet..."
+                      onValueChange={setNewSiteName}
+                      placeholder="Selecione o site"
+                      searchPlaceholder="Buscar site..."
+                      emptyText="Nenhum site encontrado."
+                      allowCustom
+                      customLabel="Adicionar"
                     />
                   </div>
                   <div className="grid gap-2">
