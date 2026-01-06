@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Combobox } from '@/components/ui/combobox';
 import { BetModality, BetTiming, BetResult } from '@/types/bet';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -32,7 +33,80 @@ interface BetSelection {
 const modalities: BetModality[] = ['FUTEBOL', 'MMA', 'BASQUETE', 'TÊNIS', 'ESPORTS', 'OUTRO'];
 const timings: BetTiming[] = ['PRÉ', 'LIVE'];
 const results: BetResult[] = ['GREEN', 'RED', 'CASHOUT', 'DEVOLVIDA', 'PENDING'];
-const bookmakers = ['Bet365', 'Betsson', 'Ultrabet', 'Betano', 'Sportingbet', 'Pinnacle', 'Betfair'];
+const bookmakers = [
+  '1xbet',
+  '1xbit',
+  '300',
+  'Alfabet',
+  'Ansatsu',
+  'Apostarbet',
+  'Bet365',
+  'Bet7k',
+  'BetAki',
+  'Betano',
+  'Betaobet',
+  'BetBoom',
+  'Betbra',
+  'Betfair',
+  'Betfast',
+  'Betfury',
+  'Betgorilas',
+  'Betnacional',
+  'BetOnline',
+  'Betou.bet',
+  'Betpontobet',
+  'Betsson',
+  'Betsul',
+  'Betvip',
+  'Bigbet',
+  'Blaze',
+  'Br4.bet',
+  'Brbet',
+  'Breno',
+  'Bullsbet',
+  'Cassinobet',
+  'Chegoubet',
+  'Cloudbet',
+  'Duelbits',
+  'Esportiva',
+  'EstrelaBet',
+  'F12',
+  'Fanbit',
+  'Fullbet',
+  'Galerabet',
+  'Geralbet',
+  'Hiperbet',
+  'Jogo de Ouro',
+  'King Panda',
+  'KTO',
+  'Liderbet',
+  'Lotogreen',
+  'Luva',
+  'M4TT',
+  'MarjoSports',
+  'MMAbet',
+  'Multi.bet',
+  'Onabet',
+  'Pagolbet',
+  'Pinnacle',
+  'Pixrabet',
+  'Polymarket',
+  'R7bet',
+  'Reals',
+  'Rei do Pitaco',
+  'Renan',
+  'Roobet',
+  'Shuffle',
+  'Sortenabet',
+  'Sportingbet',
+  'Stake',
+  'Startbet',
+  'Tivobet',
+  'Triadfi',
+  'Ultrabet',
+  'Vbet',
+  'Verabet',
+];
 
 const markets = [
   'Total escanteios',
@@ -587,19 +661,16 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
               </div>
               <div className="space-y-2">
                 <Label>Casa de Apostas</Label>
-                <Select 
-                  value={generalData.bookmaker} 
+                <Combobox
+                  options={bookmakers}
+                  value={generalData.bookmaker}
                   onValueChange={(v) => setGeneralData({ ...generalData, bookmaker: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bookmakers.map((b) => (
-                      <SelectItem key={b} value={b}>{b}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Selecione o site"
+                  searchPlaceholder="Buscar site..."
+                  emptyText="Nenhum site encontrado."
+                  allowCustom
+                  customLabel="Adicionar"
+                />
               </div>
             </div>
 
