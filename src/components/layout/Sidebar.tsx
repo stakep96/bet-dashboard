@@ -2,7 +2,6 @@ import {
   LayoutDashboard, 
   TrendingUp, 
   List, 
-  Calendar, 
   Wallet, 
   Settings, 
   HelpCircle,
@@ -27,7 +26,6 @@ const mainNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Visão Geral', path: '/' },
   { icon: TrendingUp, label: 'Estatísticas', path: '/estatisticas' },
   { icon: List, label: 'Entradas', path: '/entradas' },
-  { icon: Calendar, label: 'Calendário', path: '/calendario' },
   { icon: Wallet, label: 'Banca', path: '/banca' },
 ];
 

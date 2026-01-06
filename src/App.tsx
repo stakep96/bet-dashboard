@@ -8,7 +8,6 @@ import { BancaProvider } from "@/contexts/BancaContext";
 import Index from "./pages/Index";
 import Estatisticas from "./pages/Estatisticas";
 import Entradas from "./pages/Entradas";
-import Calendario from "./pages/Calendario";
 import Banca from "./pages/Banca";
 import Configuracoes from "./pages/Configuracoes";
 import Suporte from "./pages/Suporte";
@@ -44,7 +43,6 @@ function AppRoutes() {
         <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
         <Route path="/estatisticas" element={<ProtectedRoute><Estatisticas /></ProtectedRoute>} />
         <Route path="/entradas" element={<ProtectedRoute><Entradas /></ProtectedRoute>} />
-        <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
         <Route path="/banca" element={<ProtectedRoute><Banca /></ProtectedRoute>} />
         <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
         <Route path="/suporte" element={<ProtectedRoute><Suporte /></ProtectedRoute>} />
