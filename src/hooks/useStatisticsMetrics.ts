@@ -55,6 +55,11 @@ interface TopLosers {
   worstMarket: MarketStats | null;
 }
 
+interface TopWinners {
+  bestModality: ModalityStats | null;
+  bestMarket: MarketStats | null;
+}
+
 function parseEntradaDate(dateStr: string): Date {
   if (!dateStr) return new Date();
   
@@ -230,6 +235,14 @@ export function useStatisticsMetrics() {
       .sort((a, b) => b.profit - a.profit);
   }, [entradas]);
 
+  // Top winners (best performing)
+  const topWinners = useMemo((): TopWinners => {
+    const bestModality = [...modalityStats].sort((a, b) => b.profit - a.profit)[0] || null;
+    const bestMarket = [...marketStats].sort((a, b) => b.profit - a.profit)[0] || null;
+    
+    return { bestModality, bestMarket };
+  }, [modalityStats, marketStats]);
+
   // Top losers (worst performing)
   const topLosers = useMemo((): TopLosers => {
     const worstModality = [...modalityStats].sort((a, b) => a.profit - b.profit)[0] || null;
@@ -279,6 +292,7 @@ export function useStatisticsMetrics() {
     modalityStats,
     marketStats,
     advancedMetrics,
+    topWinners,
     topLosers,
     hasData: entradas.length > 0,
   };
