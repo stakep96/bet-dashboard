@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const Estatisticas = () => {
-  const { monthSummary, modalityStats, marketStats, advancedMetrics, topLosers, hasData } = useStatisticsMetrics();
+  const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData } = useStatisticsMetrics();
 
   const formatCurrency = (value: number) => {
     const prefix = value >= 0 ? '+' : '';
@@ -233,6 +233,46 @@ const Estatisticas = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Onde mais venceu */}
+              {(topWinners.bestModality && topWinners.bestModality.profit > 0) || (topWinners.bestMarket && topWinners.bestMarket.profit > 0) ? (
+                <Card className="mb-6 border-success/30">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-success">
+                      <Trophy className="h-5 w-5" />
+                      Onde Você Mais Venceu
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {topWinners.bestModality && topWinners.bestModality.profit > 0 && (
+                        <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                          <p className="text-sm text-muted-foreground mb-1">Melhor Modalidade</p>
+                          <p className="text-lg font-semibold text-foreground">{topWinners.bestModality.name}</p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="text-success font-bold">{formatCurrency(topWinners.bestModality.profit)}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {topWinners.bestModality.wins} vitórias • {topWinners.bestModality.winRate.toFixed(0)}% win rate
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {topWinners.bestMarket && topWinners.bestMarket.profit > 0 && (
+                        <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                          <p className="text-sm text-muted-foreground mb-1">Melhor Mercado</p>
+                          <p className="text-lg font-semibold text-foreground">{topWinners.bestMarket.name}</p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="text-success font-bold">{formatCurrency(topWinners.bestMarket.profit)}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {topWinners.bestMarket.wins} vitórias • {topWinners.bestMarket.winRate.toFixed(0)}% win rate
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
 
               {/* Onde mais perdeu */}
               {(topLosers.worstModality && topLosers.worstModality.profit < 0) || (topLosers.worstMarket && topLosers.worstMarket.profit < 0) ? (
