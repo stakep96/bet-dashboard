@@ -9,7 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Entrada } from '@/contexts/BancaContext';
 import { bookmakers } from '@/data/bookmakers';
-import { BetModality, BetTiming, BetResult } from '@/types/bet';
+import { modalities } from '@/data/modalities';
+import { markets } from '@/data/markets';
+import { BetTiming, BetResult } from '@/types/bet';
 
 interface EditEntradaModalProps {
   entrada: Entrada;
@@ -21,7 +23,7 @@ interface EditEntradaModalProps {
 interface BetSelection {
   id: string;
   match: string;
-  modality: BetModality | '';
+  modality: string;
   market: string;
   entry: string;
   odd: string;
@@ -29,19 +31,7 @@ interface BetSelection {
   timing: BetTiming;
 }
 
-const modalities: BetModality[] = ['FUTEBOL', 'MMA', 'BASQUETE', 'TÊNIS', 'ESPORTS', 'OUTRO'];
 const timings: BetTiming[] = ['PRÉ', 'LIVE'];
-
-const markets = [
-  'Total escanteios',
-  'Resultado final',
-  'Ambas marcam',
-  'Total gols',
-  'Handicap',
-  'Vencedor',
-  'Over/Under',
-  'Outro'
-];
 
 const createEmptySelection = (): BetSelection => ({
   id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -80,7 +70,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
       
       // Parse selections from concatenated fields
       const events = entrada.evento?.split('|').map(s => s.trim()) || [];
-      const markets = entrada.mercado?.split('|').map(s => s.trim()) || [];
+      const parsedMarkets = entrada.mercado?.split('|').map(s => s.trim()) || [];
       const entries = entrada.entrada?.split('|').map(s => s.trim()) || [];
       const eventDates = entrada.dataEvento?.split('|').map(s => s.trim()) || [];
       const timings = entrada.timing?.split('|').map(s => s.trim()) || [];
@@ -88,8 +78,8 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
       const parsedSelections: BetSelection[] = events.map((event, index) => ({
         id: Date.now().toString() + index,
         match: event,
-        modality: (entrada.modalidade as BetModality) || '',
-        market: markets[index] || '',
+        modality: entrada.modalidade || '',
+        market: parsedMarkets[index] || '',
         entry: entries[index] || '',
         odd: '',
         eventDate: eventDates[index] || entrada.dataEvento || entrada.data,
@@ -105,7 +95,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
       const sel: BetSelection = {
         id: Date.now().toString(),
         match: entrada.evento || '',
-        modality: (entrada.modalidade as BetModality) || '',
+        modality: entrada.modalidade || '',
         market: entrada.mercado || '',
         entry: entrada.entrada || '',
         odd: entrada.odd?.toString() || '',
@@ -377,19 +367,14 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Modalidade</Label>
-                        <Select 
-                          value={selection.modality} 
-                          onValueChange={(v) => updateSelection(selection.id, 'modality', v as BetModality)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {modalities.map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Combobox
+                          value={selection.modality}
+                          onValueChange={(v) => updateSelection(selection.id, 'modality', v)}
+                          options={modalities}
+                          searchPlaceholder="Buscar modalidade..."
+                          emptyText="Nenhuma modalidade encontrada."
+                          allowCustom={true}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Partida / Confronto</Label>
@@ -404,19 +389,14 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Mercado</Label>
-                        <Select 
-                          value={selection.market} 
+                        <Combobox
+                          value={selection.market}
                           onValueChange={(v) => updateSelection(selection.id, 'market', v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {markets.map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          options={markets}
+                          searchPlaceholder="Buscar mercado..."
+                          emptyText="Nenhum mercado encontrado."
+                          allowCustom={true}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Entrada (Descrição)</Label>
