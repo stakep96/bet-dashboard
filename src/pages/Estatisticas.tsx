@@ -1,46 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Target, BarChart3, PieChart, Activity, DollarSign, Percent, AlertTriangle, Trophy, XCircle, Clock, Calendar, ChevronDown, Check } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, BarChart3, Activity, DollarSign, Percent, Trophy, XCircle, Clock, AlertTriangle, PieChart } from 'lucide-react';
 import { useStatisticsMetrics } from '@/hooks/useStatisticsMetrics';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format, subMonths, isSameMonth, startOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
 
 const Estatisticas = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [monthFilterOpen, setMonthFilterOpen] = useState(false);
-  const [monthSearch, setMonthSearch] = useState('');
   
   const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData } = useStatisticsMetrics(selectedMonth);
 
-  // Generate last 12 months options
-  const monthOptions = useMemo(() => {
-    const options = [];
-    const now = new Date();
-    for (let i = 0; i < 12; i++) {
-      const month = subMonths(now, i);
-      options.push({
-        value: startOfMonth(month),
-        label: format(month, "MMMM yyyy", { locale: ptBR }),
-      });
-    }
-    return options;
-  }, []);
-
-  const filteredMonths = useMemo(() => {
-    if (!monthSearch) return monthOptions;
-    return monthOptions.filter(m => 
-      m.label.toLowerCase().includes(monthSearch.toLowerCase())
-    );
-  }, [monthOptions, monthSearch]);
-
-  const selectedLabel = format(selectedMonth, "MMMM yyyy", { locale: ptBR });
+  const selectedLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
 
   const formatCurrency = (value: number) => {
     const prefix = value >= 0 ? '+' : '';
@@ -56,77 +30,12 @@ const Estatisticas = () => {
       <Sidebar />
       
       <div className="ml-72">
-        <Header onNewEntry={() => {}} />
+        <Header onNewEntry={() => {}} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
         
         <main className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Estatísticas</h1>
-              <p className="text-muted-foreground">Análise detalhada do seu desempenho</p>
-            </div>
-            
-            {/* Month Selector Dropdown */}
-            <Popover open={monthFilterOpen} onOpenChange={setMonthFilterOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="min-w-[180px] justify-between capitalize"
-                >
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{selectedLabel}</span>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent 
-                className="w-[220px] p-0 bg-popover border border-border shadow-lg z-50" 
-                align="end"
-              >
-                <div className="p-2 border-b border-border">
-                  <Input
-                    placeholder="Buscar mês..."
-                    value={monthSearch}
-                    onChange={(e) => setMonthSearch(e.target.value)}
-                    className="h-8"
-                  />
-                </div>
-                <div className="max-h-[280px] overflow-y-auto p-1">
-                  {filteredMonths.map((month) => {
-                    const isSelected = isSameMonth(month.value, selectedMonth);
-                    return (
-                      <button
-                        key={month.label}
-                        onClick={() => {
-                          setSelectedMonth(month.value);
-                          setMonthFilterOpen(false);
-                          setMonthSearch('');
-                        }}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md capitalize transition-colors",
-                          "hover:bg-accent hover:text-accent-foreground",
-                          isSelected && "bg-accent text-accent-foreground font-medium"
-                        )}
-                      >
-                        {isSelected && <Check className="h-4 w-4" />}
-                        <span className={cn(!isSelected && "ml-6")}>{month.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="p-2 border-t border-border flex justify-end">
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      setMonthFilterOpen(false);
-                      setMonthSearch('');
-                    }}
-                  >
-                    OK
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground">Estatísticas</h1>
+            <p className="text-muted-foreground">Análise detalhada do seu desempenho</p>
           </div>
 
           {!hasData ? (
