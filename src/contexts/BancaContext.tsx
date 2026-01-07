@@ -86,6 +86,33 @@ interface BancaContextType {
 
 const BancaContext = createContext<BancaContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'banca-view-preference';
+
+interface ViewPreference {
+  isVisaoGeral: boolean;
+  selectedBancaIds: string[];
+}
+
+const loadViewPreference = (): ViewPreference | null => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Error loading view preference:', e);
+  }
+  return null;
+};
+
+const saveViewPreference = (preference: ViewPreference) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(preference));
+  } catch (e) {
+    console.error('Error saving view preference:', e);
+  }
+};
+
 export function BancaProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [bancas, setBancas] = useState<Banca[]>([]);
@@ -93,6 +120,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
   const [isVisaoGeral, setIsVisaoGeral] = useState(true);
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialPreferenceApplied, setInitialPreferenceApplied] = useState(false);
 
   const fetchBancas = useCallback(async () => {
     if (!user) return;
@@ -116,11 +144,34 @@ export function BancaProvider({ children }: { children: ReactNode }) {
 
     setBancas(mapped);
     
-    // Se está em visão geral, seleciona todas
-    if (isVisaoGeral) {
+    // Apply saved preference or default to visão geral
+    if (!initialPreferenceApplied && mapped.length > 0) {
+      const savedPref = loadViewPreference();
+      if (savedPref) {
+        // Validate that saved bancas still exist
+        const validIds = savedPref.selectedBancaIds.filter(id => 
+          mapped.some(b => b.id === id)
+        );
+        
+        if (validIds.length > 0) {
+          setIsVisaoGeral(savedPref.isVisaoGeral);
+          setSelectedBancaIds(savedPref.isVisaoGeral ? mapped.map(b => b.id) : validIds);
+        } else {
+          // Fallback to visão geral if no valid bancas
+          setIsVisaoGeral(true);
+          setSelectedBancaIds(mapped.map(b => b.id));
+        }
+      } else {
+        // Default to visão geral
+        setIsVisaoGeral(true);
+        setSelectedBancaIds(mapped.map(b => b.id));
+      }
+      setInitialPreferenceApplied(true);
+    } else if (isVisaoGeral) {
+      // Se está em visão geral, seleciona todas
       setSelectedBancaIds(mapped.map(b => b.id));
     }
-  }, [user, isVisaoGeral]);
+  }, [user, isVisaoGeral, initialPreferenceApplied]);
 
   const fetchEntradas = useCallback(async () => {
     if (!user) return;
@@ -169,8 +220,19 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       setEntradas([]);
       setSelectedBancaIds([]);
       setLoading(false);
+      setInitialPreferenceApplied(false);
     }
   }, [user, refreshData]);
+
+  // Save preference whenever selection changes (after initial load)
+  useEffect(() => {
+    if (initialPreferenceApplied && selectedBancaIds.length > 0) {
+      saveViewPreference({
+        isVisaoGeral,
+        selectedBancaIds: isVisaoGeral ? [] : selectedBancaIds, // Only save specific IDs for single selection
+      });
+    }
+  }, [isVisaoGeral, selectedBancaIds, initialPreferenceApplied]);
 
   const enterVisaoGeral = () => {
     setIsVisaoGeral(true);
