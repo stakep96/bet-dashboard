@@ -6,15 +6,23 @@ import { ptBR } from 'date-fns/locale';
 interface ModalityStats {
   name: string;
   wins: number;
+  losses: number;
   total: number;
   profit: number;
+  volume: number;
+  winRate: number;
+  roi: number;
 }
 
 interface MarketStats {
   name: string;
   wins: number;
+  losses: number;
   total: number;
   profit: number;
+  volume: number;
+  winRate: number;
+  roi: number;
 }
 
 interface MonthSummary {
@@ -32,6 +40,19 @@ interface AdvancedMetrics {
   longestWinStreak: number;
   longestLossStreak: number;
   avgOddWins: number;
+  totalVolume: number;
+  totalProfit: number;
+  totalLoss: number;
+  roi: number;
+  avgStake: number;
+  wins: number;
+  losses: number;
+  pending: number;
+}
+
+interface TopLosers {
+  worstModality: ModalityStats | null;
+  worstMarket: MarketStats | null;
 }
 
 function parseEntradaDate(dateStr: string): Date {
@@ -143,21 +164,23 @@ export function useStatisticsMetrics() {
     return wins.reduce((acc, e) => acc + (e.odd || 0), 0) / wins.length;
   }, [entradas]);
 
-  // Stats by modality
+  // Stats by modality (ALL, sorted by profit)
   const modalityStats = useMemo((): ModalityStats[] => {
-    const statsMap: Map<string, { wins: number; total: number; profit: number }> = new Map();
+    const statsMap: Map<string, { wins: number; losses: number; total: number; profit: number; volume: number }> = new Map();
 
     entradas.forEach(e => {
-      // Handle combined bets with multiple modalities
       const modalities = e.modalidade?.split('|').map(m => m.trim()) || ['Outros'];
       const profitPerModality = (e.lucro || 0) / modalities.length;
+      const stakePerModality = (e.stake || 0) / modalities.length;
       
       modalities.forEach(modality => {
         const name = modality || 'Outros';
-        const current = statsMap.get(name) || { wins: 0, total: 0, profit: 0 };
+        const current = statsMap.get(name) || { wins: 0, losses: 0, total: 0, profit: 0, volume: 0 };
         
         current.total++;
+        current.volume += stakePerModality;
         if (e.resultado === 'G') current.wins++;
+        else if (e.resultado === 'P') current.losses++;
         current.profit += profitPerModality;
         
         statsMap.set(name, current);
@@ -165,26 +188,32 @@ export function useStatisticsMetrics() {
     });
 
     return Array.from(statsMap.entries())
-      .map(([name, stats]) => ({ name, ...stats }))
-      .sort((a, b) => b.profit - a.profit)
-      .slice(0, 6);
+      .map(([name, stats]) => ({ 
+        name, 
+        ...stats,
+        winRate: (stats.wins + stats.losses) > 0 ? (stats.wins / (stats.wins + stats.losses)) * 100 : 0,
+        roi: stats.volume > 0 ? (stats.profit / stats.volume) * 100 : 0
+      }))
+      .sort((a, b) => b.profit - a.profit);
   }, [entradas]);
 
-  // Stats by market
+  // Stats by market (ALL, sorted by profit)
   const marketStats = useMemo((): MarketStats[] => {
-    const statsMap: Map<string, { wins: number; total: number; profit: number }> = new Map();
+    const statsMap: Map<string, { wins: number; losses: number; total: number; profit: number; volume: number }> = new Map();
 
     entradas.forEach(e => {
-      // Handle combined bets with multiple markets
       const markets = e.mercado?.split('|').map(m => m.trim()) || ['Outros'];
       const profitPerMarket = (e.lucro || 0) / markets.length;
+      const stakePerMarket = (e.stake || 0) / markets.length;
       
       markets.forEach(market => {
         const name = market || 'Outros';
-        const current = statsMap.get(name) || { wins: 0, total: 0, profit: 0 };
+        const current = statsMap.get(name) || { wins: 0, losses: 0, total: 0, profit: 0, volume: 0 };
         
         current.total++;
+        current.volume += stakePerMarket;
         if (e.resultado === 'G') current.wins++;
+        else if (e.resultado === 'P') current.losses++;
         current.profit += profitPerMarket;
         
         statsMap.set(name, current);
@@ -192,21 +221,39 @@ export function useStatisticsMetrics() {
     });
 
     return Array.from(statsMap.entries())
-      .map(([name, stats]) => ({ name, ...stats }))
-      .sort((a, b) => b.profit - a.profit)
-      .slice(0, 6);
+      .map(([name, stats]) => ({ 
+        name, 
+        ...stats,
+        winRate: (stats.wins + stats.losses) > 0 ? (stats.wins / (stats.wins + stats.losses)) * 100 : 0,
+        roi: stats.volume > 0 ? (stats.profit / stats.volume) * 100 : 0
+      }))
+      .sort((a, b) => b.profit - a.profit);
   }, [entradas]);
+
+  // Top losers (worst performing)
+  const topLosers = useMemo((): TopLosers => {
+    const worstModality = [...modalityStats].sort((a, b) => a.profit - b.profit)[0] || null;
+    const worstMarket = [...marketStats].sort((a, b) => a.profit - b.profit)[0] || null;
+    
+    return { worstModality, worstMarket };
+  }, [modalityStats, marketStats]);
 
   // Advanced metrics
   const advancedMetrics = useMemo((): AdvancedMetrics => {
     const wins = entradas.filter(e => e.resultado === 'G').length;
     const losses = entradas.filter(e => e.resultado === 'P').length;
+    const pending = entradas.filter(e => e.resultado === 'Pendente').length;
     const decidedBets = wins + losses;
     
     const winRate = decidedBets > 0 ? (wins / decidedBets) * 100 : 0;
-    const totalProfit = entradas.reduce((acc, e) => acc + (e.lucro || 0), 0);
-    const avgProfitPerEntry = entradas.length > 0 ? totalProfit / entradas.length : 0;
+    const totalProfit = entradas.filter(e => e.lucro > 0).reduce((acc, e) => acc + (e.lucro || 0), 0);
+    const totalLoss = Math.abs(entradas.filter(e => e.lucro < 0).reduce((acc, e) => acc + (e.lucro || 0), 0));
+    const netProfit = entradas.reduce((acc, e) => acc + (e.lucro || 0), 0);
+    const avgProfitPerEntry = entradas.length > 0 ? netProfit / entradas.length : 0;
     const winLossRatio = losses > 0 ? wins / losses : wins;
+    const totalVolume = entradas.reduce((acc, e) => acc + (e.stake || 0), 0);
+    const avgStake = entradas.length > 0 ? totalVolume / entradas.length : 0;
+    const roi = totalVolume > 0 ? (netProfit / totalVolume) * 100 : 0;
 
     return {
       winRate,
@@ -216,6 +263,14 @@ export function useStatisticsMetrics() {
       longestWinStreak: streaks.longestWinStreak,
       longestLossStreak: streaks.longestLossStreak,
       avgOddWins,
+      totalVolume,
+      totalProfit,
+      totalLoss,
+      roi,
+      avgStake,
+      wins,
+      losses,
+      pending,
     };
   }, [entradas, streaks, avgOddWins]);
 
@@ -224,6 +279,7 @@ export function useStatisticsMetrics() {
     modalityStats,
     marketStats,
     advancedMetrics,
+    topLosers,
     hasData: entradas.length > 0,
   };
 }
