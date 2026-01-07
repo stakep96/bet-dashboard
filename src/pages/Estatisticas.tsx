@@ -10,11 +10,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const Estatisticas = () => {
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
   
   const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData } = useStatisticsMetrics(selectedMonth);
 
-  const selectedLabel = format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR });
+  const selectedLabel = selectedMonth 
+    ? format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR }) 
+    : 'Anual';
 
   const formatCurrency = (value: number) => {
     const prefix = value >= 0 ? '+' : '';
@@ -42,7 +44,7 @@ const Estatisticas = () => {
             <Card>
               <CardContent className="py-12">
                 <p className="text-center text-muted-foreground">
-                  Nenhuma entrada encontrada em {format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+                  Nenhuma entrada encontrada {selectedMonth ? `em ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}` : 'no período anual'}
                 </p>
               </CardContent>
             </Card>

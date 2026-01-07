@@ -21,13 +21,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useState, useMemo } from 'react';
 import { useBanca } from '@/contexts/BancaContext';
 import { cn } from '@/lib/utils';
-import { format, subMonths, isSameMonth, startOfMonth } from 'date-fns';
+import { format, isSameMonth, setMonth, startOfYear, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface HeaderProps {
   onNewEntry: () => void;
-  selectedMonth?: Date;
-  onMonthChange?: (month: Date) => void;
+  selectedMonth?: Date | null;
+  onMonthChange?: (month: Date | null) => void;
 }
 
 export function Header({ onNewEntry, selectedMonth, onMonthChange }: HeaderProps) {
@@ -46,15 +46,15 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange }: HeaderProps
   const [monthFilterOpen, setMonthFilterOpen] = useState(false);
   const [monthSearch, setMonthSearch] = useState('');
 
-  // Generate last 12 months options
+  // Generate 12 months (January to December) for current year
   const monthOptions = useMemo(() => {
+    const currentYear = getYear(new Date());
     const options = [];
-    const now = new Date();
     for (let i = 0; i < 12; i++) {
-      const month = subMonths(now, i);
+      const month = setMonth(startOfYear(new Date(currentYear, 0, 1)), i);
       options.push({
-        value: startOfMonth(month),
-        label: format(month, "MMMM yyyy", { locale: ptBR }),
+        value: month,
+        label: format(month, "MMMM", { locale: ptBR }),
       });
     }
     return options;
@@ -67,8 +67,8 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange }: HeaderProps
     );
   }, [monthOptions, monthSearch]);
 
-  const currentMonth = selectedMonth || new Date();
-  const selectedLabel = format(currentMonth, "MMMM yyyy", { locale: ptBR });
+  const isAnual = selectedMonth === null;
+  const selectedLabel = isAnual ? 'Anual' : format(selectedMonth || new Date(), "MMMM", { locale: ptBR });
 
   const handleCreateBanca = () => {
     if (newBancaName.trim() && newBancaBalance) {
@@ -215,9 +215,29 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange }: HeaderProps
                 className="h-8"
               />
             </div>
-            <div className="max-h-[280px] overflow-y-auto p-1">
+            <div className="max-h-[320px] overflow-y-auto p-1">
+              {/* Opção Anual destacada */}
+              <button
+                onClick={() => {
+                  onMonthChange?.(null);
+                  setMonthFilterOpen(false);
+                  setMonthSearch('');
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors font-medium",
+                  "hover:bg-primary hover:text-primary-foreground",
+                  isAnual ? "bg-primary text-primary-foreground" : "text-primary"
+                )}
+              >
+                {isAnual && <Check className="h-4 w-4" />}
+                <span className={cn(!isAnual && "ml-6")}>Anual</span>
+              </button>
+              
+              <div className="my-1 border-t border-border" />
+              
+              {/* Meses de Janeiro a Dezembro */}
               {filteredMonths.map((month) => {
-                const isSelected = isSameMonth(month.value, currentMonth);
+                const isSelected = !isAnual && selectedMonth && isSameMonth(month.value, selectedMonth);
                 return (
                   <button
                     key={month.label}
