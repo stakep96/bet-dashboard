@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useBanca, Entrada } from '@/contexts/BancaContext';
-import { format, startOfMonth, endOfMonth, isWithinInterval, subMonths, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isWithinInterval, startOfYear, endOfYear, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ModalityStats {
@@ -89,12 +89,24 @@ function parseEntradaDate(dateStr: string): Date {
   return isNaN(fallback.getTime()) ? new Date() : fallback;
 }
 
-export function useStatisticsMetrics(selectedMonth: Date = new Date()) {
+export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
   const { getEntradasByBanca } = useBanca();
   const allEntradas = getEntradasByBanca();
 
-  // Filter entries by selected month
+  // Filter entries by selected month (null = all year)
   const entradas = useMemo(() => {
+    // If null, show all entries for current year
+    if (selectedMonth === null) {
+      const currentYear = getYear(new Date());
+      const yearStart = startOfYear(new Date(currentYear, 0, 1));
+      const yearEnd = endOfYear(new Date(currentYear, 0, 1));
+      
+      return allEntradas.filter(e => {
+        const date = parseEntradaDate(e.dataEvento || e.data);
+        return isWithinInterval(date, { start: yearStart, end: yearEnd });
+      });
+    }
+    
     const monthStart = startOfMonth(selectedMonth);
     const monthEnd = endOfMonth(selectedMonth);
 
