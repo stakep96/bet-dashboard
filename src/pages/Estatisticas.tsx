@@ -1,13 +1,34 @@
+import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Target, BarChart3, PieChart, Activity, DollarSign, Percent, AlertTriangle, Trophy, XCircle, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, Target, BarChart3, PieChart, Activity, DollarSign, Percent, AlertTriangle, Trophy, XCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStatisticsMetrics } from '@/hooks/useStatisticsMetrics';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format, subMonths, addMonths, isSameMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Estatisticas = () => {
-  const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData } = useStatisticsMetrics();
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData } = useStatisticsMetrics(selectedMonth);
+
+  const isCurrentMonth = isSameMonth(selectedMonth, new Date());
+
+  const handlePreviousMonth = () => {
+    setSelectedMonth(prev => subMonths(prev, 1));
+  };
+
+  const handleNextMonth = () => {
+    if (!isCurrentMonth) {
+      setSelectedMonth(prev => addMonths(prev, 1));
+    }
+  };
+
+  const handleCurrentMonth = () => {
+    setSelectedMonth(new Date());
+  };
 
   const formatCurrency = (value: number) => {
     const prefix = value >= 0 ? '+' : '';
@@ -26,15 +47,47 @@ const Estatisticas = () => {
         <Header onNewEntry={() => {}} />
         
         <main className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">Estatísticas</h1>
-            <p className="text-muted-foreground">Análise detalhada do seu desempenho</p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Estatísticas</h1>
+              <p className="text-muted-foreground">Análise detalhada do seu desempenho</p>
+            </div>
+            
+            {/* Month Selector */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handlePreviousMonth}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant={isCurrentMonth ? "default" : "outline"}
+                onClick={handleCurrentMonth}
+                className="min-w-[140px] capitalize"
+              >
+                {format(selectedMonth, "MMMM yyyy", { locale: ptBR })}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={handleNextMonth}
+                disabled={isCurrentMonth}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {!hasData ? (
             <Card>
               <CardContent className="py-12">
-                <p className="text-center text-muted-foreground">Nenhuma entrada cadastrada para exibir estatísticas</p>
+                <p className="text-center text-muted-foreground">
+                  Nenhuma entrada encontrada em {format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
               </CardContent>
             </Card>
           ) : (

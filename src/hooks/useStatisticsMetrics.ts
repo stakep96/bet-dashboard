@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useBanca, Entrada } from '@/contexts/BancaContext';
-import { format, startOfMonth, endOfMonth, isWithinInterval, startOfDay, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isWithinInterval, subMonths, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface ModalityStats {
@@ -89,26 +89,28 @@ function parseEntradaDate(dateStr: string): Date {
   return isNaN(fallback.getTime()) ? new Date() : fallback;
 }
 
-export function useStatisticsMetrics() {
+export function useStatisticsMetrics(selectedMonth: Date = new Date()) {
   const { getEntradasByBanca } = useBanca();
-  const entradas = getEntradasByBanca();
+  const allEntradas = getEntradasByBanca();
 
-  // Current month summary
-  const monthSummary = useMemo((): MonthSummary => {
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
+  // Filter entries by selected month
+  const entradas = useMemo(() => {
+    const monthStart = startOfMonth(selectedMonth);
+    const monthEnd = endOfMonth(selectedMonth);
 
-    const monthEntries = entradas.filter(e => {
+    return allEntradas.filter(e => {
       const date = parseEntradaDate(e.dataEvento || e.data);
       return isWithinInterval(date, { start: monthStart, end: monthEnd });
     });
+  }, [allEntradas, selectedMonth]);
 
-    const totalProfit = monthEntries.reduce((acc, e) => acc + (e.lucro || 0), 0);
+  // Current month summary
+  const monthSummary = useMemo((): MonthSummary => {
+    const totalProfit = entradas.reduce((acc, e) => acc + (e.lucro || 0), 0);
 
     // Group by day
     const dailyPnL: Map<string, number> = new Map();
-    monthEntries.forEach(e => {
+    entradas.forEach(e => {
       const dateStr = e.dataEvento || e.data;
       const dateKey = dateStr.split(' ')[0];
       const current = dailyPnL.get(dateKey) || 0;
