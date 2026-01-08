@@ -93,18 +93,16 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
   const { getEntradasByBanca } = useBanca();
   const allEntradas = getEntradasByBanca();
 
-  // Filter entries by selected month (null = all year)
+  // Get all available months from entries
+  const availableMonths = useMemo(() => {
+    return allEntradas.map(e => parseEntradaDate(e.dataEvento || e.data));
+  }, [allEntradas]);
+
+  // Filter entries by selected month (null = all data)
   const entradas = useMemo(() => {
-    // If null, show all entries for current year
+    // If null, show all entries
     if (selectedMonth === null) {
-      const currentYear = getYear(new Date());
-      const yearStart = startOfYear(new Date(currentYear, 0, 1));
-      const yearEnd = endOfYear(new Date(currentYear, 0, 1));
-      
-      return allEntradas.filter(e => {
-        const date = parseEntradaDate(e.dataEvento || e.data);
-        return isWithinInterval(date, { start: yearStart, end: yearEnd });
-      });
+      return allEntradas;
     }
     
     const monthStart = startOfMonth(selectedMonth);
@@ -309,5 +307,6 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     topWinners,
     topLosers,
     hasData: entradas.length > 0,
+    availableMonths,
   };
 }
