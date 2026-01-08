@@ -192,11 +192,11 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMont
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-transparent">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-primary hover:text-primary-foreground">
           <Search className="w-5 h-5" />
         </Button>
 
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-transparent relative">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-primary hover:text-primary-foreground relative">
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
         </Button>
