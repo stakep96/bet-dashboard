@@ -192,18 +192,18 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMont
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-transparent">
           <Search className="w-5 h-5" />
         </Button>
 
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-transparent relative">
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
         </Button>
 
         <Popover open={monthFilterOpen} onOpenChange={setMonthFilterOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="min-w-[180px] justify-between gap-2 text-foreground border-border bg-transparent hover:bg-muted capitalize">
+            <Button variant="outline" className="min-w-[180px] justify-between gap-2 text-foreground border-border bg-transparent hover:bg-transparent hover:text-foreground capitalize">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span>{selectedLabel}</span>
@@ -280,7 +280,7 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMont
           </PopoverContent>
         </Popover>
 
-        <Button variant="outline" className="gap-2 text-foreground border-border bg-transparent hover:bg-muted">
+        <Button variant="outline" className="gap-2 text-foreground border-border bg-transparent hover:bg-transparent hover:text-foreground">
           <Filter className="w-4 h-4" />
           Filtrar
         </Button>
