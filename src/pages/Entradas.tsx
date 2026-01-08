@@ -20,6 +20,7 @@ import { EditEntradaModal } from '@/components/forms/EditEntradaModal';
 import { EntradasFilter, FilterState } from '@/components/filters/EntradasFilter';
 import { useBanca, Entrada } from '@/contexts/BancaContext';
 import { useExportCSV } from '@/hooks/useExportCSV';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 const parseCSV = (content: string): string[][] => {
   const rows: string[][] = [];
@@ -89,6 +90,7 @@ const Entradas = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
   const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     dateFrom: undefined,
     dateTo: undefined,
@@ -114,14 +116,41 @@ const Entradas = () => {
   
   const entradasDaBanca = getEntradasByBanca();
 
+  // Get available months for the filter
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    entradasDaBanca.forEach(e => {
+      const date = new Date(e.dataEvento || e.data);
+      if (!isNaN(date.getTime())) {
+        months.add(`${date.getFullYear()}-${date.getMonth()}`);
+      }
+    });
+    return Array.from(months).map(key => {
+      const [year, month] = key.split('-').map(Number);
+      return new Date(year, month, 1);
+    }).sort((a, b) => b.getTime() - a.getTime());
+  }, [entradasDaBanca]);
+
+  // Filter entries by selected month (month only, ignoring year)
+  const entradasFiltradasPorMes = useMemo(() => {
+    if (selectedMonth === null) {
+      return entradasDaBanca;
+    }
+    const selectedMonthIndex = selectedMonth.getMonth();
+    return entradasDaBanca.filter(e => {
+      const date = new Date(e.dataEvento || e.data);
+      return date.getMonth() === selectedMonthIndex;
+    });
+  }, [entradasDaBanca, selectedMonth]);
+
   // Get unique values for filters
-  const modalidades = useMemo(() => [...new Set(entradasDaBanca.map(e => e.modalidade).filter(Boolean))], [entradasDaBanca]);
-  const mercados = useMemo(() => [...new Set(entradasDaBanca.map(e => e.mercado).filter(Boolean))], [entradasDaBanca]);
-  const sites = useMemo(() => [...new Set(entradasDaBanca.map(e => e.site).filter(Boolean))], [entradasDaBanca]);
+  const modalidades = useMemo(() => [...new Set(entradasFiltradasPorMes.map(e => e.modalidade).filter(Boolean))], [entradasFiltradasPorMes]);
+  const mercados = useMemo(() => [...new Set(entradasFiltradasPorMes.map(e => e.mercado).filter(Boolean))], [entradasFiltradasPorMes]);
+  const sites = useMemo(() => [...new Set(entradasFiltradasPorMes.map(e => e.site).filter(Boolean))], [entradasFiltradasPorMes]);
 
   // Apply filters and sorting
   const filteredEntradas = useMemo(() => {
-    let result = entradasDaBanca.filter(entrada =>
+    let result = entradasFiltradasPorMes.filter(entrada =>
       entrada.evento.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entrada.mercado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entrada.modalidade.toLowerCase().includes(searchTerm.toLowerCase())
@@ -179,7 +208,7 @@ const Entradas = () => {
     });
 
     return result;
-  }, [entradasDaBanca, searchTerm, filters]);
+  }, [entradasFiltradasPorMes, searchTerm, filters]);
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -301,7 +330,7 @@ const Entradas = () => {
       <Sidebar />
       
       <div className="ml-72">
-        <Header onNewEntry={() => setShowNewBetForm(true)} />
+        <Header onNewEntry={() => setShowNewBetForm(true)} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} availableMonths={availableMonths} />
         
         <main className="p-6">
           <div className="flex items-center justify-between mb-6">
