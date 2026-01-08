@@ -284,11 +284,6 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMont
           <Filter className="w-4 h-4" />
           Filtrar
         </Button>
-
-        <Button onClick={onNewEntry} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4" />
-          Cadastrar Entrada
-        </Button>
       </div>
 
       {/* Modal Nova Banca */}
