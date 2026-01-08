@@ -21,16 +21,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useState, useMemo } from 'react';
 import { useBanca } from '@/contexts/BancaContext';
 import { cn } from '@/lib/utils';
-import { format, isSameMonth, setMonth, startOfYear, getYear } from 'date-fns';
+import { format, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface HeaderProps {
   onNewEntry: () => void;
   selectedMonth?: Date | null;
   onMonthChange?: (month: Date | null) => void;
+  availableMonths?: Date[];
 }
 
-export function Header({ onNewEntry, selectedMonth, onMonthChange }: HeaderProps) {
+export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMonths }: HeaderProps) {
   const { 
     bancas, 
     selectedBancaIds,
@@ -46,19 +47,29 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange }: HeaderProps
   const [monthFilterOpen, setMonthFilterOpen] = useState(false);
   const [monthSearch, setMonthSearch] = useState('');
 
-  // Generate 12 months (January to December) for current year
+  // Generate month options from available months data
   const monthOptions = useMemo(() => {
-    const currentYear = getYear(new Date());
-    const options = [];
-    for (let i = 0; i < 12; i++) {
-      const month = setMonth(startOfYear(new Date(currentYear, 0, 1)), i);
-      options.push({
-        value: month,
-        label: format(month, "MMMM", { locale: ptBR }),
-      });
+    if (!availableMonths || availableMonths.length === 0) {
+      // No data - return empty
+      return [];
     }
-    return options;
-  }, []);
+    
+    // Build unique months from available data, sorted chronologically
+    const uniqueMonths = new Map<string, Date>();
+    availableMonths.forEach(date => {
+      const key = format(date, "yyyy-MM");
+      if (!uniqueMonths.has(key)) {
+        uniqueMonths.set(key, date);
+      }
+    });
+    
+    return Array.from(uniqueMonths.values())
+      .sort((a, b) => a.getTime() - b.getTime())
+      .map(date => ({
+        value: date,
+        label: format(date, "MMMM", { locale: ptBR }),
+      }));
+  }, [availableMonths]);
 
   const filteredMonths = useMemo(() => {
     if (!monthSearch) return monthOptions;

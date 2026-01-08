@@ -12,7 +12,7 @@ import { ptBR } from 'date-fns/locale';
 const Estatisticas = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
   
-  const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData } = useStatisticsMetrics(selectedMonth);
+  const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData, availableMonths } = useStatisticsMetrics(selectedMonth);
 
   const selectedLabel = selectedMonth 
     ? format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR }) 
@@ -32,7 +32,7 @@ const Estatisticas = () => {
       <Sidebar />
       
       <div className="ml-72">
-        <Header onNewEntry={() => {}} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+        <Header onNewEntry={() => {}} selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} availableMonths={availableMonths} />
         
         <main className="p-6">
           <div className="mb-6">
