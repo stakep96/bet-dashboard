@@ -13,7 +13,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Download, Plus, Upload, Pencil, Loader2 } from 'lucide-react';
+import { Search, Download, Plus, Upload, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
 import { EditEntradaModal } from '@/components/forms/EditEntradaModal';
@@ -466,14 +466,29 @@ const Entradas = () => {
                           </TableCell>
                           <TableCell className="text-muted-foreground text-xs py-2">{entrada.site}</TableCell>
                           <TableCell className="py-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7"
-                              onClick={() => setEditingEntrada(entrada)}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={() => setEditingEntrada(entrada)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+                                    deleteEntrada(entrada.id);
+                                    toast.success('Entrada excluída com sucesso!');
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
