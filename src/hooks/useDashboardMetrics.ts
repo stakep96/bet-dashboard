@@ -35,6 +35,9 @@ export interface MonthlyStats {
   losses: number;
   cashouts: number;
   returned: number;
+  halfWins: number;
+  halfLosses: number;
+  pending: number;
   avgOdd: number;
   avgStake: number;
   totalStaked: number;
@@ -58,6 +61,7 @@ export function useDashboardMetrics() {
     const currentBankroll = entradas.length > 0 ? initialBalance + pnlFromEntradas : currentBalance;
 
     // Para winrate: G e GM são vitórias, P e PM são derrotas
+    // Cashout (C) e Devolvida (D) não contam para winrate mas contribuem para PnL
     const wins = entradas.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
     const losses = entradas.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
     const decidedBets = wins + losses;
@@ -190,17 +194,23 @@ export function useDashboardMetrics() {
     });
 
     sortedMonths.forEach(([month, monthEntries]) => {
-      // Para winrate: G e GM são vitórias, P e PM são derrotas
-      const wins = monthEntries.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
-      const losses = monthEntries.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
+      // Contagem por tipo de resultado
+      const wins = monthEntries.filter(e => e.resultado === 'G').length;
+      const losses = monthEntries.filter(e => e.resultado === 'P').length;
       const cashouts = monthEntries.filter(e => e.resultado === 'C').length;
       const returned = monthEntries.filter(e => e.resultado === 'D').length;
+      const halfWins = monthEntries.filter(e => e.resultado === 'GM').length;
+      const halfLosses = monthEntries.filter(e => e.resultado === 'PM').length;
+      const pending = monthEntries.filter(e => e.resultado === 'Pendente').length;
       
-      const pnl = monthEntries.reduce((acc, e) => acc + e.lucro, 0);
-      const totalStaked = monthEntries.reduce((acc, e) => acc + e.stake, 0);
+      // PnL considera TODAS as entradas (todos os tipos de resultado)
+      const pnl = monthEntries.reduce((acc, e) => acc + (e.lucro || 0), 0);
+      const totalStaked = monthEntries.reduce((acc, e) => acc + (e.stake || 0), 0);
       const roi = totalStaked > 0 ? (pnl / totalStaked) * 100 : 0;
-      const avgOdd = monthEntries.reduce((acc, e) => acc + e.odd, 0) / monthEntries.length;
-      const avgStake = totalStaked / monthEntries.length;
+      const avgOdd = monthEntries.length > 0 
+        ? monthEntries.reduce((acc, e) => acc + (e.odd || 0), 0) / monthEntries.length 
+        : 0;
+      const avgStake = monthEntries.length > 0 ? totalStaked / monthEntries.length : 0;
 
       cumulativeBankroll += pnl;
 
@@ -211,6 +221,9 @@ export function useDashboardMetrics() {
         losses,
         cashouts,
         returned,
+        halfWins,
+        halfLosses,
+        pending,
         avgOdd,
         avgStake,
         totalStaked,
