@@ -35,6 +35,8 @@ const Index = () => {
       const v = String(value || '').toUpperCase().trim();
       if (v === 'GREEN' || v === 'G') return 'G';
       if (v === 'RED' || v === 'P') return 'P';
+      if (v === 'GREEN_HALF' || v === 'GM') return 'GM';
+      if (v === 'RED_HALF' || v === 'PM') return 'PM';
       if (v === 'CASHOUT' || v === 'CASH' || v === 'C') return 'C';
       if (v === 'DEVOLVIDA' || v === 'DEV' || v === 'D') return 'D';
       return 'Pendente';

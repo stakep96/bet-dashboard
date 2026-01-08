@@ -53,7 +53,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     createdAt: entrada.data,
     eventDate: entrada.dataEvento || entrada.data,
     stake: entrada.stake.toString(),
-    result: 'Pendente' as 'G' | 'P' | 'C' | 'D' | 'Pendente',
+    result: 'Pendente' as 'G' | 'P' | 'C' | 'D' | 'GM' | 'PM' | 'Pendente',
     bookmaker: entrada.site || '',
     totalOdd: entrada.odd.toString(),
   });
@@ -163,13 +163,15 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     switch (resultado) {
       case 'G': return stake * (odd - 1);
       case 'P': return -stake;
+      case 'GM': return (stake * (odd - 1)) / 2; // Ganhou Metade
+      case 'PM': return -stake / 2; // Perdeu Metade
       case 'C': return 0;
       case 'D': return 0;
       default: return 0;
     }
   };
 
-  const handleResultadoChange = (value: 'G' | 'P' | 'C' | 'D' | 'Pendente') => {
+  const handleResultadoChange = (value: 'G' | 'P' | 'C' | 'D' | 'GM' | 'PM' | 'Pendente') => {
     setGeneralData(prev => ({ ...prev, result: value }));
   };
 
@@ -531,8 +533,10 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Pendente">Pendente</SelectItem>
-                    <SelectItem value="G">Green (Ganho)</SelectItem>
-                    <SelectItem value="P">Red (Perda)</SelectItem>
+                    <SelectItem value="G">Ganha</SelectItem>
+                    <SelectItem value="P">Perdida</SelectItem>
+                    <SelectItem value="GM">Ganhou Metade</SelectItem>
+                    <SelectItem value="PM">Perdeu Metade</SelectItem>
                     <SelectItem value="C">Cashout</SelectItem>
                     <SelectItem value="D">Devolvida</SelectItem>
                   </SelectContent>

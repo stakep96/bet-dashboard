@@ -55,8 +55,10 @@ export function useExportCSV() {
     ];
 
     const resultadoMap: Record<string, string> = {
-      'G': 'Ganhou',
-      'P': 'Perdeu',
+      'G': 'Ganha',
+      'P': 'Perdida',
+      'GM': 'Ganhou Metade',
+      'PM': 'Perdeu Metade',
       'C': 'Cashout',
       'D': 'Devolvida',
       'Pendente': 'Pendente'

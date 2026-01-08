@@ -34,7 +34,7 @@ interface BetSelection {
 }
 
 const timings: BetTiming[] = ['PRÉ', 'LIVE'];
-const results: BetResult[] = ['GREEN', 'RED', 'CASHOUT', 'DEVOLVIDA', 'PENDING'];
+const results: BetResult[] = ['GREEN', 'RED', 'GREEN_HALF', 'RED_HALF', 'CASHOUT', 'DEVOLVIDA', 'PENDING'];
 
 
 const createEmptySelection = (): BetSelection => ({
@@ -623,8 +623,10 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PENDING">Pendente</SelectItem>
-                    <SelectItem value="GREEN">Green (Ganho)</SelectItem>
-                    <SelectItem value="RED">Red (Perda)</SelectItem>
+                    <SelectItem value="GREEN">Ganha</SelectItem>
+                    <SelectItem value="RED">Perdida</SelectItem>
+                    <SelectItem value="GREEN_HALF">Ganhou Metade</SelectItem>
+                    <SelectItem value="RED_HALF">Perdeu Metade</SelectItem>
                     <SelectItem value="CASHOUT">Cashout</SelectItem>
                     <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
                   </SelectContent>

@@ -1,4 +1,4 @@
-export type BetResult = 'GREEN' | 'RED' | 'CASHOUT' | 'DEVOLVIDA' | 'PENDING';
+export type BetResult = 'GREEN' | 'RED' | 'CASHOUT' | 'DEVOLVIDA' | 'PENDING' | 'GREEN_HALF' | 'RED_HALF';
 export type BetTiming = 'PRÉ' | 'LIVE';
 export type BetModality = 'FUTEBOL' | 'MMA' | 'BASQUETE' | 'TÊNIS' | 'ESPORTS' | 'OUTRO';
 
