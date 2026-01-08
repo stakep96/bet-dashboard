@@ -45,6 +45,10 @@ interface AdvancedMetrics {
   avgStake: number;
   wins: number;
   losses: number;
+  halfWins: number;
+  halfLosses: number;
+  cashouts: number;
+  returned: number;
   pending: number;
 }
 
@@ -263,19 +267,29 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     return { worstModality, worstMarket };
   }, [modalityStats, marketStats]);
 
-  // Advanced metrics - G e GM são vitórias, P e PM são derrotas
+  // Advanced metrics - contagem por tipo de resultado
   const advancedMetrics = useMemo((): AdvancedMetrics => {
-    const wins = entradas.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
-    const losses = entradas.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
+    const wins = entradas.filter(e => e.resultado === 'G').length;
+    const losses = entradas.filter(e => e.resultado === 'P').length;
+    const halfWins = entradas.filter(e => e.resultado === 'GM').length;
+    const halfLosses = entradas.filter(e => e.resultado === 'PM').length;
+    const cashouts = entradas.filter(e => e.resultado === 'C').length;
+    const returned = entradas.filter(e => e.resultado === 'D').length;
     const pending = entradas.filter(e => e.resultado === 'Pendente').length;
-    const decidedBets = wins + losses;
     
-    const winRate = decidedBets > 0 ? (wins / decidedBets) * 100 : 0;
-    const totalProfit = entradas.filter(e => e.lucro > 0).reduce((acc, e) => acc + (e.lucro || 0), 0);
-    const totalLoss = Math.abs(entradas.filter(e => e.lucro < 0).reduce((acc, e) => acc + (e.lucro || 0), 0));
+    // Para winrate: G e GM são vitórias, P e PM são derrotas
+    const totalWins = wins + halfWins;
+    const totalLosses = losses + halfLosses;
+    const decidedBets = totalWins + totalLosses;
+    
+    const winRate = decidedBets > 0 ? (totalWins / decidedBets) * 100 : 0;
+    
+    // PnL considera TODAS as entradas (incluindo cashout, devolvida, etc)
+    const totalProfit = entradas.filter(e => (e.lucro || 0) > 0).reduce((acc, e) => acc + (e.lucro || 0), 0);
+    const totalLoss = Math.abs(entradas.filter(e => (e.lucro || 0) < 0).reduce((acc, e) => acc + (e.lucro || 0), 0));
     const netProfit = entradas.reduce((acc, e) => acc + (e.lucro || 0), 0);
     const avgProfitPerEntry = entradas.length > 0 ? netProfit / entradas.length : 0;
-    const winLossRatio = losses > 0 ? wins / losses : wins;
+    const winLossRatio = totalLosses > 0 ? totalWins / totalLosses : totalWins;
     const totalVolume = entradas.reduce((acc, e) => acc + (e.stake || 0), 0);
     const avgStake = entradas.length > 0 ? totalVolume / entradas.length : 0;
     const roi = totalVolume > 0 ? (netProfit / totalVolume) * 100 : 0;
@@ -295,6 +309,10 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
       avgStake,
       wins,
       losses,
+      halfWins,
+      halfLosses,
+      cashouts,
+      returned,
       pending,
     };
   }, [entradas, streaks, avgOddWins]);
