@@ -47,28 +47,25 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMont
   const [monthFilterOpen, setMonthFilterOpen] = useState(false);
   const [monthSearch, setMonthSearch] = useState('');
 
-  // Generate month options from available months data
+  // Generate month options - all 12 months based on the year of available data
   const monthOptions = useMemo(() => {
     if (!availableMonths || availableMonths.length === 0) {
       // No data - return empty
       return [];
     }
     
-    // Build unique months from available data, sorted chronologically
-    const uniqueMonths = new Map<string, Date>();
-    availableMonths.forEach(date => {
-      const key = format(date, "yyyy-MM");
-      if (!uniqueMonths.has(key)) {
-        uniqueMonths.set(key, date);
-      }
-    });
+    // Get the year from the earliest entry
+    const years = availableMonths.map(d => d.getFullYear());
+    const baseYear = Math.min(...years);
     
-    return Array.from(uniqueMonths.values())
-      .sort((a, b) => a.getTime() - b.getTime())
-      .map(date => ({
+    // Generate all 12 months for that year
+    return Array.from({ length: 12 }, (_, i) => {
+      const date = new Date(baseYear, i, 1);
+      return {
         value: date,
         label: format(date, "MMMM", { locale: ptBR }),
-      }));
+      };
+    });
   }, [availableMonths]);
 
   const filteredMonths = useMemo(() => {
