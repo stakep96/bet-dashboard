@@ -21,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useState, useMemo } from 'react';
 import { useBanca } from '@/contexts/BancaContext';
 import { cn } from '@/lib/utils';
-import { format, isSameMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface HeaderProps {
@@ -245,7 +245,7 @@ export function Header({ onNewEntry, selectedMonth, onMonthChange, availableMont
               
               {/* Meses de Janeiro a Dezembro */}
               {filteredMonths.map((month) => {
-                const isSelected = !isAnual && selectedMonth && isSameMonth(month.value, selectedMonth);
+                const isSelected = !isAnual && selectedMonth && month.value.getMonth() === selectedMonth.getMonth();
                 return (
                   <button
                     key={month.label}

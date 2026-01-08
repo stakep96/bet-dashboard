@@ -15,7 +15,7 @@ const Estatisticas = () => {
   const { monthSummary, modalityStats, marketStats, advancedMetrics, topWinners, topLosers, hasData, availableMonths } = useStatisticsMetrics(selectedMonth);
 
   const selectedLabel = selectedMonth 
-    ? format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR }) 
+    ? format(selectedMonth, "MMMM", { locale: ptBR }) 
     : 'Anual';
 
   const formatCurrency = (value: number) => {
@@ -44,7 +44,7 @@ const Estatisticas = () => {
             <Card>
               <CardContent className="py-12">
                 <p className="text-center text-muted-foreground">
-                  Nenhuma entrada encontrada {selectedMonth ? `em ${format(selectedMonth, "MMMM 'de' yyyy", { locale: ptBR })}` : 'no período anual'}
+                  Nenhuma entrada encontrada {selectedMonth ? `em ${format(selectedMonth, "MMMM", { locale: ptBR })}` : 'no período anual'}
                 </p>
               </CardContent>
             </Card>

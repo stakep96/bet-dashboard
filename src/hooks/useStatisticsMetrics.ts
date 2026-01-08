@@ -1,7 +1,5 @@
 import { useMemo } from 'react';
-import { useBanca, Entrada } from '@/contexts/BancaContext';
-import { format, startOfMonth, endOfMonth, isWithinInterval, startOfYear, endOfYear, getYear } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useBanca } from '@/contexts/BancaContext';
 
 interface ModalityStats {
   name: string;
@@ -104,13 +102,13 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     if (selectedMonth === null) {
       return allEntradas;
     }
-    
-    const monthStart = startOfMonth(selectedMonth);
-    const monthEnd = endOfMonth(selectedMonth);
 
+    const selectedMonthIndex = selectedMonth.getMonth();
+
+    // IMPORTANT: filtro considera apenas o mês (ignora o ano)
     return allEntradas.filter(e => {
       const date = parseEntradaDate(e.dataEvento || e.data);
-      return isWithinInterval(date, { start: monthStart, end: monthEnd });
+      return date.getMonth() === selectedMonthIndex;
     });
   }, [allEntradas, selectedMonth]);
 
