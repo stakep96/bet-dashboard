@@ -127,8 +127,10 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">Todos</SelectItem>
-                  <SelectItem value="G">Ganhou</SelectItem>
-                  <SelectItem value="P">Perdeu</SelectItem>
+                  <SelectItem value="G">Ganha</SelectItem>
+                  <SelectItem value="P">Perdida</SelectItem>
+                  <SelectItem value="GM">Ganhou Metade</SelectItem>
+                  <SelectItem value="PM">Perdeu Metade</SelectItem>
                   <SelectItem value="C">Cashout</SelectItem>
                   <SelectItem value="D">Devolvida</SelectItem>
                   <SelectItem value="Pendente">Pendente</SelectItem>

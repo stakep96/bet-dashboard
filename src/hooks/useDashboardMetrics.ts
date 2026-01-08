@@ -57,8 +57,9 @@ export function useDashboardMetrics() {
     const totalPnL = entradas.length > 0 ? pnlFromEntradas : currentBalance - initialBalance;
     const currentBankroll = entradas.length > 0 ? initialBalance + pnlFromEntradas : currentBalance;
 
-    const wins = entradas.filter(e => e.resultado === 'G').length;
-    const losses = entradas.filter(e => e.resultado === 'P').length;
+    // Para winrate: G e GM são vitórias, P e PM são derrotas
+    const wins = entradas.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
+    const losses = entradas.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
     const decidedBets = wins + losses;
     const winRate = decidedBets > 0 ? (wins / decidedBets) * 100 : 0;
 
@@ -189,8 +190,9 @@ export function useDashboardMetrics() {
     });
 
     sortedMonths.forEach(([month, monthEntries]) => {
-      const wins = monthEntries.filter(e => e.resultado === 'G').length;
-      const losses = monthEntries.filter(e => e.resultado === 'P').length;
+      // Para winrate: G e GM são vitórias, P e PM são derrotas
+      const wins = monthEntries.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
+      const losses = monthEntries.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
       const cashouts = monthEntries.filter(e => e.resultado === 'C').length;
       const returned = monthEntries.filter(e => e.resultado === 'D').length;
       

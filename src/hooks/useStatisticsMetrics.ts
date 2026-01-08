@@ -142,10 +142,10 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     };
   }, [entradas]);
 
-  // Streaks calculation
+  // Streaks calculation - G e GM são vitórias, P e PM são derrotas
   const streaks = useMemo(() => {
     const sortedEntradas = [...entradas]
-      .filter(e => e.resultado === 'G' || e.resultado === 'P')
+      .filter(e => e.resultado === 'G' || e.resultado === 'GM' || e.resultado === 'P' || e.resultado === 'PM')
       .sort((a, b) => {
         const dateA = parseEntradaDate(a.dataEvento || a.data);
         const dateB = parseEntradaDate(b.dataEvento || b.data);
@@ -158,11 +158,11 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     let currentLossStreak = 0;
 
     sortedEntradas.forEach(e => {
-      if (e.resultado === 'G') {
+      if (e.resultado === 'G' || e.resultado === 'GM') {
         currentWinStreak++;
         currentLossStreak = 0;
         longestWinStreak = Math.max(longestWinStreak, currentWinStreak);
-      } else if (e.resultado === 'P') {
+      } else if (e.resultado === 'P' || e.resultado === 'PM') {
         currentLossStreak++;
         currentWinStreak = 0;
         longestLossStreak = Math.max(longestLossStreak, currentLossStreak);
@@ -172,9 +172,9 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     return { longestWinStreak, longestLossStreak };
   }, [entradas]);
 
-  // Average odd on wins
+  // Average odd on wins (G e GM)
   const avgOddWins = useMemo(() => {
-    const wins = entradas.filter(e => e.resultado === 'G');
+    const wins = entradas.filter(e => e.resultado === 'G' || e.resultado === 'GM');
     if (wins.length === 0) return 0;
     return wins.reduce((acc, e) => acc + (e.odd || 0), 0) / wins.length;
   }, [entradas]);
@@ -194,8 +194,9 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
         
         current.total++;
         current.volume += stakePerModality;
-        if (e.resultado === 'G') current.wins++;
-        else if (e.resultado === 'P') current.losses++;
+        // G e GM são vitórias, P e PM são derrotas
+        if (e.resultado === 'G' || e.resultado === 'GM') current.wins++;
+        else if (e.resultado === 'P' || e.resultado === 'PM') current.losses++;
         current.profit += profitPerModality;
         
         statsMap.set(name, current);
@@ -227,8 +228,9 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
         
         current.total++;
         current.volume += stakePerMarket;
-        if (e.resultado === 'G') current.wins++;
-        else if (e.resultado === 'P') current.losses++;
+        // G e GM são vitórias, P e PM são derrotas
+        if (e.resultado === 'G' || e.resultado === 'GM') current.wins++;
+        else if (e.resultado === 'P' || e.resultado === 'PM') current.losses++;
         current.profit += profitPerMarket;
         
         statsMap.set(name, current);
@@ -261,10 +263,10 @@ export function useStatisticsMetrics(selectedMonth: Date | null = new Date()) {
     return { worstModality, worstMarket };
   }, [modalityStats, marketStats]);
 
-  // Advanced metrics
+  // Advanced metrics - G e GM são vitórias, P e PM são derrotas
   const advancedMetrics = useMemo((): AdvancedMetrics => {
-    const wins = entradas.filter(e => e.resultado === 'G').length;
-    const losses = entradas.filter(e => e.resultado === 'P').length;
+    const wins = entradas.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
+    const losses = entradas.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
     const pending = entradas.filter(e => e.resultado === 'Pendente').length;
     const decidedBets = wins + losses;
     

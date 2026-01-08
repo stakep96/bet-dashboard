@@ -54,7 +54,7 @@ export interface Entrada {
   entrada: string;
   odd: number;
   stake: number;
-  resultado: 'G' | 'P' | 'C' | 'D' | 'Pendente';
+  resultado: 'G' | 'P' | 'C' | 'D' | 'GM' | 'PM' | 'Pendente';
   lucro: number;
   timing: string;
   site: string;

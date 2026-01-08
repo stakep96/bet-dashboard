@@ -76,11 +76,13 @@ const parseOdd = (value: string): number => {
   return parseFloat(value.replace(',', '.').trim()) || 0;
 };
 
-const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' | 'Pendente' => {
+const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' | 'GM' | 'PM' | 'Pendente' => {
   const upper = value?.toUpperCase().trim();
   if (!upper || upper === '') return 'Pendente';
-  if (upper === 'G' || upper === 'GREEN' || upper === 'GANHOU') return 'G';
-  if (upper === 'P' || upper === 'RED' || upper === 'PERDEU') return 'P';
+  if (upper === 'G' || upper === 'GREEN' || upper === 'GANHA' || upper === 'GANHOU') return 'G';
+  if (upper === 'P' || upper === 'RED' || upper === 'PERDIDA' || upper === 'PERDEU') return 'P';
+  if (upper === 'GM' || upper === 'GREEN_HALF' || upper === 'GANHOU METADE') return 'GM';
+  if (upper === 'PM' || upper === 'RED_HALF' || upper === 'PERDEU METADE') return 'PM';
   if (upper === 'C' || upper === 'CASHOUT' || upper === 'CASH') return 'C';
   if (upper === 'D' || upper === 'DEVOLVIDA' || upper === 'DEV') return 'D';
   return 'Pendente';
@@ -297,8 +299,10 @@ const Entradas = () => {
 
   const getResultadoLabel = (resultado: string) => {
     switch (resultado) {
-      case 'G': return 'Ganhou';
-      case 'P': return 'Perdeu';
+      case 'G': return 'Ganha';
+      case 'P': return 'Perdida';
+      case 'GM': return 'Ganhou ½';
+      case 'PM': return 'Perdeu ½';
       case 'C': return 'Cashout';
       case 'D': return 'Devolvida';
       case 'Pendente': return 'Pendente';
@@ -310,6 +314,8 @@ const Entradas = () => {
     switch (resultado) {
       case 'G': return 'bg-green-500/10 text-green-500 hover:bg-green-500/20';
       case 'P': return 'bg-red-500/10 text-red-500 hover:bg-red-500/20';
+      case 'GM': return 'bg-green-500/10 text-green-500 hover:bg-green-500/20';
+      case 'PM': return 'bg-red-500/10 text-red-500 hover:bg-red-500/20';
       case 'C': return 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20';
       case 'D': return 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20';
       case 'Pendente': return 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20';

@@ -4,8 +4,20 @@ import { cn } from '@/lib/utils';
 const resultColors: Record<string, string> = {
   G: 'bg-success/10 text-success',
   P: 'bg-destructive/10 text-destructive',
+  GM: 'bg-success/10 text-success',
+  PM: 'bg-destructive/10 text-destructive',
   C: 'bg-warning/10 text-warning-foreground',
   D: 'bg-muted text-muted-foreground',
+};
+
+const resultLabels: Record<string, string> = {
+  G: 'G',
+  P: 'P',
+  GM: '½G',
+  PM: '½P',
+  C: 'C',
+  D: 'D',
+  Pendente: '...',
 };
 
 export function RecentBets() {
@@ -75,7 +87,7 @@ export function RecentBets() {
                     "inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold",
                     resultColors[bet.resultado] || 'bg-muted text-muted-foreground'
                   )}>
-                    {bet.resultado}
+                    {resultLabels[bet.resultado] || bet.resultado}
                   </span>
                 </td>
                 <td className={cn(
