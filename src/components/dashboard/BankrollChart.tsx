@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useBanca } from '@/contexts/BancaContext';
 import { useDashboardMetrics, filterByPeriod } from '@/hooks/useDashboardMetrics';
 import { format, parse, isValid } from 'date-fns';
@@ -202,8 +203,9 @@ export function BankrollChart() {
                       <p className={`text-xs font-medium mt-1 ${isPositive ? 'text-primary' : 'text-muted-foreground'}`}>
                         Variação: {isPositive ? '+' : ''}R$ {data.change.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className={`text-xs font-medium ${dailyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        ROI do dia: {dailyRoi >= 0 ? '+' : ''}{dailyRoi.toFixed(2)}%
+                      <p className={`text-xs font-medium flex items-center gap-1 ${dailyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        Cresc. Banca: {dailyRoi >= 0 ? '+' : ''}{dailyRoi.toFixed(2)}%
+                        {dailyRoi >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                       </p>
                     </div>
                   );
