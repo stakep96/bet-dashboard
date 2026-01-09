@@ -188,15 +188,37 @@ export function BankrollChart() {
                   const isPositive = data.change >= 0;
                   const date = parseChartDate(data.date);
                   const formattedDate = date ? format(date, "dd/MMM", { locale: ptBR }).replace('.', '') : data.date;
+                  
+                  // Calculate period summary up to this point
+                  const totalGain = data.value - initialValue;
+                  const periodGrowth = initialValue > 0 ? ((data.value - initialValue) / initialValue * 100) : 0;
+                  const isGainPositive = totalGain >= 0;
+                  
                   return (
-                    <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                    <div className="bg-card border border-border rounded-lg p-3 shadow-lg min-w-[180px]">
                       <p className="text-xs text-muted-foreground mb-2">{formattedDate}</p>
                       <p className="text-sm font-semibold">
                         Banca: R$ {data.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                       <p className={`text-xs font-medium mt-1 ${isPositive ? 'text-primary' : 'text-muted-foreground'}`}>
-                        Variação: {isPositive ? '+' : ''}R$ {data.change.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        Dia: {isPositive ? '+' : ''}R$ {data.change.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
+                      
+                      <div className="border-t border-border mt-2 pt-2">
+                        <p className="text-xs text-muted-foreground mb-1">Resumo do Período</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">Ganho Total:</span>
+                          <span className={`text-xs font-semibold ${isGainPositive ? 'text-success' : 'text-destructive'}`}>
+                            {isGainPositive ? '+' : ''}R$ {totalGain.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-0.5">
+                          <span className="text-xs text-muted-foreground">Crescimento:</span>
+                          <span className={`text-xs font-semibold ${isGainPositive ? 'text-success' : 'text-destructive'}`}>
+                            {isGainPositive ? '+' : ''}{periodGrowth.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   );
                 }
