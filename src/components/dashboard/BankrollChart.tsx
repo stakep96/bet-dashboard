@@ -188,6 +188,11 @@ export function BankrollChart() {
                   const isPositive = data.change >= 0;
                   const date = parseChartDate(data.date);
                   const formattedDate = date ? format(date, "dd/MMM", { locale: ptBR }).replace('.', '') : data.date;
+                  
+                  // Calculate daily ROI: change relative to previous day's value
+                  const prevValue = data.value - data.change;
+                  const dailyRoi = prevValue > 0 ? (data.change / prevValue) * 100 : 0;
+                  
                   return (
                     <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
                       <p className="text-xs text-muted-foreground mb-2">{formattedDate}</p>
@@ -196,6 +201,9 @@ export function BankrollChart() {
                       </p>
                       <p className={`text-xs font-medium mt-1 ${isPositive ? 'text-primary' : 'text-muted-foreground'}`}>
                         Variação: {isPositive ? '+' : ''}R$ {data.change.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className={`text-xs font-medium ${dailyRoi >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        ROI do dia: {dailyRoi >= 0 ? '+' : ''}{dailyRoi.toFixed(2)}%
                       </p>
                     </div>
                   );
