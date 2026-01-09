@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 
 export function WinRateChart() {
@@ -10,7 +10,7 @@ export function WinRateChart() {
     { name: 'Perdidas', value: metrics.losses, color: 'hsl(0, 72%, 51%)' },
   ];
 
-  // Dados completos para exibição na legenda
+  // Dados completos para exibição na legenda (incluindo valores zerados)
   const allResults = [
     { name: 'Ganhas', value: metrics.wins - metrics.halfWins, color: 'hsl(142, 71%, 45%)' },
     { name: 'Perdidas', value: metrics.losses - metrics.halfLosses, color: 'hsl(0, 72%, 51%)' },
@@ -19,7 +19,30 @@ export function WinRateChart() {
     { name: 'Cashout', value: metrics.cashouts, color: 'hsl(45, 93%, 47%)' },
     { name: 'Devolvida', value: metrics.returned, color: 'hsl(220, 9%, 46%)' },
     { name: 'Pendente', value: metrics.pending, color: 'hsl(220, 14%, 71%)' },
-  ].filter(item => item.value > 0);
+  ];
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const total = metrics.wins + metrics.losses;
+      const percentage = total > 0 ? ((data.value / total) * 100).toFixed(1) : '0';
+      return (
+        <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg">
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-2.5 h-2.5 rounded-full" 
+              style={{ backgroundColor: data.color }}
+            />
+            <span className="text-sm font-medium">{data.name}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {data.value} apostas ({percentage}%)
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (!hasData) {
     return (
@@ -60,6 +83,7 @@ export function WinRateChart() {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
+              <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -68,7 +92,7 @@ export function WinRateChart() {
           <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
           <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
           
-          <div className="mt-3 space-y-1.5 max-h-[100px] overflow-y-auto">
+          <div className="mt-3 space-y-1.5 max-h-[120px] overflow-y-auto">
             {allResults.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
