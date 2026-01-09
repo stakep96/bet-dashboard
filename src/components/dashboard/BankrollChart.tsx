@@ -63,6 +63,20 @@ export function BankrollChart() {
     });
   }, [filteredHistory]);
 
+  // Calculate Y-axis domain based on actual data values
+  const yAxisDomain = useMemo(() => {
+    if (chartData.length === 0) return [0, 100];
+    
+    const allValues = chartData.map(d => d.value);
+    const minValue = Math.min(...allValues, 0);
+    const maxValue = Math.max(...allValues);
+    
+    // Add 10% padding to top
+    const padding = (maxValue - minValue) * 0.1;
+    
+    return [Math.min(0, minValue), maxValue + padding];
+  }, [chartData]);
+
   // Calculate current value and growth
   const currentValue = filteredHistory.length > 0 ? filteredHistory[filteredHistory.length - 1].value : 0;
   const initialValue = filteredHistory.length > 0 ? filteredHistory[0].value - (filteredHistory[0].change || 0) : 0;
@@ -165,6 +179,7 @@ export function BankrollChart() {
               }}
               tickCount={6}
               width={55}
+              domain={yAxisDomain}
             />
             <Tooltip 
               content={({ active, payload }) => {
