@@ -4,10 +4,22 @@ import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 export function WinRateChart() {
   const { metrics, hasData } = useDashboardMetrics();
 
-  const data = [
+  // Dados para o gráfico de pizza (apenas ganhas vs perdidas para o visual principal)
+  const chartData = [
     { name: 'Ganhas', value: metrics.wins, color: 'hsl(142, 71%, 45%)' },
     { name: 'Perdidas', value: metrics.losses, color: 'hsl(0, 72%, 51%)' },
   ];
+
+  // Dados completos para exibição na legenda
+  const allResults = [
+    { name: 'Ganhas', value: metrics.wins - metrics.halfWins, color: 'hsl(142, 71%, 45%)' },
+    { name: 'Perdidas', value: metrics.losses - metrics.halfLosses, color: 'hsl(0, 72%, 51%)' },
+    { name: 'Ganhou Metade', value: metrics.halfWins, color: 'hsl(142, 71%, 65%)' },
+    { name: 'Perdeu Metade', value: metrics.halfLosses, color: 'hsl(0, 72%, 70%)' },
+    { name: 'Cashout', value: metrics.cashouts, color: 'hsl(45, 93%, 47%)' },
+    { name: 'Devolvida', value: metrics.returned, color: 'hsl(220, 9%, 46%)' },
+    { name: 'Pendente', value: metrics.pending, color: 'hsl(220, 14%, 71%)' },
+  ].filter(item => item.value > 0);
 
   if (!hasData) {
     return (
@@ -36,7 +48,7 @@ export function WinRateChart() {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 innerRadius={45}
@@ -44,7 +56,7 @@ export function WinRateChart() {
                 paddingAngle={3}
                 dataKey="value"
               >
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
@@ -56,21 +68,19 @@ export function WinRateChart() {
           <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
           <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
           
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success" />
-                <span className="text-sm">Ganhas</span>
+          <div className="mt-3 space-y-1.5 max-h-[100px] overflow-y-auto">
+            {allResults.map((item, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-2.5 h-2.5 rounded-full" 
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-xs">{item.name}</span>
+                </div>
+                <span className="text-xs font-medium">{item.value}</span>
               </div>
-              <span className="text-sm font-medium">{metrics.wins}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-destructive" />
-                <span className="text-sm">Perdidas</span>
-              </div>
-              <span className="text-sm font-medium">{metrics.losses}</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
