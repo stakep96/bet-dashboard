@@ -655,8 +655,9 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
                     <Input
-                      type="text"
-                      inputMode="decimal"
+                      type="number"
+                      step="0.01"
+                      min="0"
                       placeholder="0.00"
                       value={generalData.cashoutValue}
                       onChange={(e) => setGeneralData({ ...generalData, cashoutValue: e.target.value })}
