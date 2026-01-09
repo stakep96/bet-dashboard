@@ -4,13 +4,7 @@ import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 export function WinRateChart() {
   const { metrics, hasData } = useDashboardMetrics();
 
-  // Dados para o gráfico de pizza (apenas ganhas vs perdidas para o visual principal)
-  const chartData = [
-    { name: 'Ganhas', value: metrics.wins, color: 'hsl(142, 71%, 45%)' },
-    { name: 'Perdidas', value: metrics.losses, color: 'hsl(0, 72%, 51%)' },
-  ];
-
-  // Dados completos para exibição na legenda (incluindo valores zerados)
+  // Dados completos para exibição (incluindo valores zerados na legenda)
   const allResults = [
     { name: 'Ganhas', value: metrics.wins - metrics.halfWins, color: 'hsl(142, 71%, 45%)' },
     { name: 'Perdidas', value: metrics.losses - metrics.halfLosses, color: 'hsl(0, 72%, 51%)' },
@@ -19,7 +13,10 @@ export function WinRateChart() {
     { name: 'Cashout', value: metrics.cashouts, color: 'hsl(45, 93%, 47%)' },
     { name: 'Devolvida', value: metrics.returned, color: 'hsl(220, 9%, 46%)' },
     { name: 'Pendente', value: metrics.pending, color: 'hsl(220, 14%, 71%)' },
-  ];
+  ].sort((a, b) => b.value - a.value);
+
+  // Dados para o gráfico de pizza (apenas valores > 0)
+  const chartData = allResults.filter(item => item.value > 0);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -92,7 +89,7 @@ export function WinRateChart() {
           <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
           <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
           
-          <div className="mt-3 space-y-1.5 max-h-[120px] overflow-y-auto">
+          <div className="mt-3 space-y-1.5">
             {allResults.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
