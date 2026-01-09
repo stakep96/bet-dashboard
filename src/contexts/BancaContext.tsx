@@ -176,17 +176,34 @@ export function BancaProvider({ children }: { children: ReactNode }) {
   const fetchEntradas = useCallback(async () => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('entradas')
-      .select('*')
-      .order('date', { ascending: false });
+    // Buscar todas as entradas com paginação para superar o limite de 1000
+    const PAGE_SIZE = 1000;
+    let allData: any[] = [];
+    let offset = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error('Error fetching entradas:', error);
-      return;
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('entradas')
+        .select('*')
+        .order('date', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1);
+
+      if (error) {
+        console.error('Error fetching entradas:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        offset += PAGE_SIZE;
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
     }
 
-    const mapped: Entrada[] = (data || []).map((e: any) => ({
+    const mapped: Entrada[] = allData.map((e: any) => ({
       id: e.id,
       data: e.date,
       dataEvento: e.event_date || e.date,
