@@ -635,7 +635,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                   value={generalData.result} 
                   onValueChange={(v) => setGeneralData({ ...generalData, result: v as BetResult })}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>

@@ -534,7 +534,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                   value={generalData.result} 
                   onValueChange={(v) => handleResultadoChange(v as any)}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
