@@ -528,39 +528,43 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
                   />
                 </div>
               )}
-              <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
+              <div className="space-y-2">
                 <Label>Resultado</Label>
-                <div className="flex gap-2">
-                  <Select 
-                    value={generalData.result} 
-                    onValueChange={(v) => handleResultadoChange(v as any)}
-                  >
-                    <SelectTrigger className={generalData.result === 'C' ? 'flex-1' : ''}>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pendente">Pendente</SelectItem>
-                      <SelectItem value="G">Ganha</SelectItem>
-                      <SelectItem value="P">Perdida</SelectItem>
-                      <SelectItem value="GM">Ganhou Metade</SelectItem>
-                      <SelectItem value="PM">Perdeu Metade</SelectItem>
-                      <SelectItem value="C">Cashout</SelectItem>
-                      <SelectItem value="D">Devolvida</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {generalData.result === 'C' && (
+                <Select 
+                  value={generalData.result} 
+                  onValueChange={(v) => handleResultadoChange(v as any)}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem value="G">Ganha</SelectItem>
+                    <SelectItem value="P">Perdida</SelectItem>
+                    <SelectItem value="GM">Ganhou Metade</SelectItem>
+                    <SelectItem value="PM">Perdeu Metade</SelectItem>
+                    <SelectItem value="C">Cashout</SelectItem>
+                    <SelectItem value="D">Devolvida</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {generalData.result === 'C' && (
+                <div className="space-y-2">
+                  <Label>Valor Recebido</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
                     <Input
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="Valor recebido"
+                      placeholder="0.00"
                       value={generalData.cashoutValue}
                       onChange={(e) => setGeneralData({ ...generalData, cashoutValue: e.target.value })}
-                      className="w-32"
+                      className="pl-9"
                     />
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

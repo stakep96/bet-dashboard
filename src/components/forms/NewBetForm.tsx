@@ -629,39 +629,43 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
                   />
                 </div>
               )}
-              <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
+              <div className="space-y-2">
                 <Label>Resultado</Label>
-                <div className="flex gap-2">
-                  <Select 
-                    value={generalData.result} 
-                    onValueChange={(v) => setGeneralData({ ...generalData, result: v as BetResult })}
-                  >
-                    <SelectTrigger className={generalData.result === 'CASHOUT' ? 'flex-1' : ''}>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PENDING">Pendente</SelectItem>
-                      <SelectItem value="GREEN">Ganha</SelectItem>
-                      <SelectItem value="RED">Perdida</SelectItem>
-                      <SelectItem value="GREEN_HALF">Ganhou Metade</SelectItem>
-                      <SelectItem value="RED_HALF">Perdeu Metade</SelectItem>
-                      <SelectItem value="CASHOUT">Cashout</SelectItem>
-                      <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {generalData.result === 'CASHOUT' && (
+                <Select 
+                  value={generalData.result} 
+                  onValueChange={(v) => setGeneralData({ ...generalData, result: v as BetResult })}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pendente</SelectItem>
+                    <SelectItem value="GREEN">Ganha</SelectItem>
+                    <SelectItem value="RED">Perdida</SelectItem>
+                    <SelectItem value="GREEN_HALF">Ganhou Metade</SelectItem>
+                    <SelectItem value="RED_HALF">Perdeu Metade</SelectItem>
+                    <SelectItem value="CASHOUT">Cashout</SelectItem>
+                    <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {generalData.result === 'CASHOUT' && (
+                <div className="space-y-2">
+                  <Label>Valor Recebido</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
                     <Input
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="Valor recebido"
+                      placeholder="0.00"
                       value={generalData.cashoutValue}
                       onChange={(e) => setGeneralData({ ...generalData, cashoutValue: e.target.value })}
-                      className="w-32"
+                      className="pl-9"
                     />
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
