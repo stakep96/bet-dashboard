@@ -12,6 +12,11 @@ export interface DashboardMetrics {
   totalEntries: number;
   wins: number;
   losses: number;
+  cashouts: number;
+  returned: number;
+  halfWins: number;
+  halfLosses: number;
+  pending: number;
   avgOdd: number;
   avgStake: number;
   totalStaked: number;
@@ -64,6 +69,11 @@ export function useDashboardMetrics() {
     // Cashout (C) e Devolvida (D) não contam para winrate mas contribuem para PnL
     const wins = entradas.filter(e => e.resultado === 'G' || e.resultado === 'GM').length;
     const losses = entradas.filter(e => e.resultado === 'P' || e.resultado === 'PM').length;
+    const cashouts = entradas.filter(e => e.resultado === 'C').length;
+    const returned = entradas.filter(e => e.resultado === 'D').length;
+    const halfWins = entradas.filter(e => e.resultado === 'GM').length;
+    const halfLosses = entradas.filter(e => e.resultado === 'PM').length;
+    const pending = entradas.filter(e => e.resultado === 'Pendente').length;
     const decidedBets = wins + losses;
     const winRate = decidedBets > 0 ? (wins / decidedBets) * 100 : 0;
 
@@ -86,6 +96,11 @@ export function useDashboardMetrics() {
       totalEntries: entradas.length,
       wins,
       losses,
+      cashouts,
+      returned,
+      halfWins,
+      halfLosses,
+      pending,
       avgOdd,
       avgStake,
       totalStaked,
