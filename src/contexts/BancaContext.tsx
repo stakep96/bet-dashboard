@@ -144,7 +144,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
 
     setBancas(mapped);
     
-    // Apply saved preference or default to visão geral
+    // Apply saved preference only on FIRST load
     if (!initialPreferenceApplied && mapped.length > 0) {
       const savedPref = loadViewPreference();
       if (savedPref) {
@@ -167,11 +167,10 @@ export function BancaProvider({ children }: { children: ReactNode }) {
         setSelectedBancaIds(mapped.map(b => b.id));
       }
       setInitialPreferenceApplied(true);
-    } else if (isVisaoGeral) {
-      // Se está em visão geral, seleciona todas
-      setSelectedBancaIds(mapped.map(b => b.id));
     }
-  }, [user, isVisaoGeral, initialPreferenceApplied]);
+    // REMOVED: the "else if (isVisaoGeral)" block that was resetting selectedBancaIds
+    // This was causing the bug where values changed after fetch
+  }, [user, initialPreferenceApplied]);
 
   const fetchEntradas = useCallback(async () => {
     if (!user) return;
