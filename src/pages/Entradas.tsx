@@ -238,38 +238,80 @@ const Entradas = () => {
       }
 
       const novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[] = [];
+      const linhasIgnoradas: { linha: number; motivo: string }[] = [];
+      
+      // Helper para validar data
+      const isValidDate = (value: string): boolean => {
+        if (!value || value.trim() === '') return false;
+        const v = value.trim();
+        // YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return true;
+        // DD/MM/YYYY or DD-MM-YYYY
+        if (/^\d{1,2}[\/-]\d{1,2}[\/-]\d{4}$/.test(v)) return true;
+        // Try parsing as date
+        const d = new Date(v);
+        return !isNaN(d.getTime());
+      };
       
       for (let i = 1; i < rows.length; i++) {
         const cols = rows[i];
+        const linhaCSV = i + 1; // linha no arquivo (considerando header)
         
-        if (cols.length >= 10) {
-          const cleanField = (field: string) => field?.replace(/\s*\n\s*/g, ' ').trim() || '';
-          
-          novasEntradas.push({
-            data: cleanField(cols[0]),
-            modalidade: cleanField(cols[1]),
-            dataEvento: cleanField(cols[2]),
-            evento: cleanField(cols[3]),
-            mercado: cleanField(cols[4]),
-            entrada: cleanField(cols[5]),
-            odd: parseOdd(cols[6]),
-            stake: parseMoneyValue(cols[7]),
-            resultado: mapResultado(cols[8]),
-            lucro: parseMoneyValue(cols[9]),
-            timing: cleanField(cols[10]) || 'PRÉ',
-            site: cleanField(cols[11]),
-          });
+        // Verificar se tem colunas suficientes
+        if (cols.length < 10) {
+          linhasIgnoradas.push({ linha: linhaCSV, motivo: `Apenas ${cols.length} colunas (mínimo 10)` });
+          continue;
+        }
+        
+        const cleanField = (field: string) => field?.replace(/\s*\n\s*/g, ' ').trim() || '';
+        const dataRegistro = cleanField(cols[0]);
+        
+        // Verificar se a data de registro é válida
+        if (!isValidDate(dataRegistro)) {
+          linhasIgnoradas.push({ linha: linhaCSV, motivo: `Data inválida: "${dataRegistro}"` });
+          continue;
+        }
+        
+        novasEntradas.push({
+          data: dataRegistro,
+          modalidade: cleanField(cols[1]),
+          dataEvento: cleanField(cols[2]),
+          evento: cleanField(cols[3]),
+          mercado: cleanField(cols[4]),
+          entrada: cleanField(cols[5]),
+          odd: parseOdd(cols[6]),
+          stake: parseMoneyValue(cols[7]),
+          resultado: mapResultado(cols[8]),
+          lucro: parseMoneyValue(cols[9]),
+          timing: cleanField(cols[10]) || 'PRÉ',
+          site: cleanField(cols[11]),
+        });
+      }
+
+      // Log detalhado das linhas ignoradas
+      if (linhasIgnoradas.length > 0) {
+        console.warn(`Importação CSV: ${linhasIgnoradas.length} linhas ignoradas:`);
+        linhasIgnoradas.slice(0, 20).forEach(({ linha, motivo }) => {
+          console.warn(`  Linha ${linha}: ${motivo}`);
+        });
+        if (linhasIgnoradas.length > 20) {
+          console.warn(`  ... e mais ${linhasIgnoradas.length - 20} linhas`);
         }
       }
 
       if (novasEntradas.length === 0) {
-        toast.error('Nenhuma entrada válida encontrada no CSV.');
+        const motivos = [...new Set(linhasIgnoradas.map(l => l.motivo))].slice(0, 3).join('; ');
+        toast.error(`Nenhuma entrada válida encontrada. Problemas: ${motivos}`);
         return;
       }
 
       try {
         await addEntradas(novasEntradas);
-        toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca?.name}"!`);
+        if (linhasIgnoradas.length > 0) {
+          toast.warning(`${novasEntradas.length} entradas importadas, ${linhasIgnoradas.length} linhas ignoradas (veja console para detalhes).`);
+        } else {
+          toast.success(`${novasEntradas.length} entradas importadas para a banca "${selectedBanca?.name}"!`);
+        }
       } catch (err: any) {
         toast.error(err?.message || 'Erro ao importar entradas. Verifique o formato das datas (use YYYY-MM-DD ou DD/MM/YYYY).');
       }
