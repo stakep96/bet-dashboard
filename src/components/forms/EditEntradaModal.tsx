@@ -56,6 +56,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     result: 'Pendente' as 'G' | 'P' | 'C' | 'D' | 'GM' | 'PM' | 'Pendente',
     bookmaker: entrada.site || '',
     totalOdd: entrada.odd.toString(),
+    cashoutValue: '',
   });
 
   const [saving, setSaving] = useState(false);
@@ -106,6 +107,9 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
       setExpandedSelections(new Set([sel.id]));
     }
     
+    // Calculate cashout value if result is C (cashout value = stake + profit)
+    const cashoutVal = entrada.resultado === 'C' ? (entrada.stake + entrada.lucro).toString() : '';
+    
     setGeneralData({
       createdAt: entrada.data,
       eventDate: entrada.dataEvento || entrada.data,
@@ -113,6 +117,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
       result: entrada.resultado,
       bookmaker: entrada.site || '',
       totalOdd: entrada.odd.toString(),
+      cashoutValue: cashoutVal,
     });
   }, [entrada]);
 
@@ -159,13 +164,13 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     return odds.reduce((acc, odd) => acc * odd, 1);
   };
 
-  const calculateProfit = (resultado: string, stake: number, odd: number): number => {
+  const calculateProfit = (resultado: string, stake: number, odd: number, cashoutValue?: number): number => {
     switch (resultado) {
       case 'G': return stake * (odd - 1);
       case 'P': return -stake;
       case 'GM': return (stake * (odd - 1)) / 2; // Ganhou Metade
       case 'PM': return -stake / 2; // Perdeu Metade
-      case 'C': return 0;
+      case 'C': return (cashoutValue || 0) - stake; // Cashout: valor recebido - stake
       case 'D': return 0;
       default: return 0;
     }
@@ -180,7 +185,8 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     try {
       const stake = parseFloat(generalData.stake) || 0;
       const totalOdd = generalData.totalOdd ? parseFloat(generalData.totalOdd) : calculateTotalOdd();
-      const profit = calculateProfit(generalData.result, stake, totalOdd);
+      const cashoutVal = parseFloat(generalData.cashoutValue) || 0;
+      const profit = calculateProfit(generalData.result, stake, totalOdd, cashoutVal);
 
       let updatedEntrada: Entrada;
 
@@ -224,7 +230,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
           odd,
           stake,
           resultado: generalData.result,
-          lucro: calculateProfit(generalData.result, stake, odd),
+          lucro: calculateProfit(generalData.result, stake, odd, cashoutVal),
           timing: selection.timing,
           site: generalData.bookmaker,
         };
@@ -524,23 +530,36 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
               )}
               <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
                 <Label>Resultado</Label>
-                <Select 
-                  value={generalData.result} 
-                  onValueChange={(v) => handleResultadoChange(v as any)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pendente">Pendente</SelectItem>
-                    <SelectItem value="G">Ganha</SelectItem>
-                    <SelectItem value="P">Perdida</SelectItem>
-                    <SelectItem value="GM">Ganhou Metade</SelectItem>
-                    <SelectItem value="PM">Perdeu Metade</SelectItem>
-                    <SelectItem value="C">Cashout</SelectItem>
-                    <SelectItem value="D">Devolvida</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select 
+                    value={generalData.result} 
+                    onValueChange={(v) => handleResultadoChange(v as any)}
+                  >
+                    <SelectTrigger className={generalData.result === 'C' ? 'flex-1' : ''}>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pendente">Pendente</SelectItem>
+                      <SelectItem value="G">Ganha</SelectItem>
+                      <SelectItem value="P">Perdida</SelectItem>
+                      <SelectItem value="GM">Ganhou Metade</SelectItem>
+                      <SelectItem value="PM">Perdeu Metade</SelectItem>
+                      <SelectItem value="C">Cashout</SelectItem>
+                      <SelectItem value="D">Devolvida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {generalData.result === 'C' && (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Valor recebido"
+                      value={generalData.cashoutValue}
+                      onChange={(e) => setGeneralData({ ...generalData, cashoutValue: e.target.value })}
+                      className="w-32"
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>

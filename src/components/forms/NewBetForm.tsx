@@ -60,6 +60,7 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     result: 'PENDING' as BetResult,
     bookmaker: '',
     totalOdd: '',
+    cashoutValue: '',
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -210,10 +211,26 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
     const totalOdd = generalData.totalOdd ? parseFloat(generalData.totalOdd) : calculateTotalOdd();
 
     let profitLoss = 0;
-    if (generalData.result === 'GREEN') {
-      profitLoss = stake * (totalOdd - 1);
-    } else if (generalData.result === 'RED') {
-      profitLoss = -stake;
+    switch (generalData.result) {
+      case 'GREEN':
+        profitLoss = stake * (totalOdd - 1);
+        break;
+      case 'RED':
+        profitLoss = -stake;
+        break;
+      case 'GREEN_HALF':
+        profitLoss = (stake * (totalOdd - 1)) / 2;
+        break;
+      case 'RED_HALF':
+        profitLoss = -stake / 2;
+        break;
+      case 'CASHOUT':
+        profitLoss = (parseFloat(generalData.cashoutValue) || 0) - stake;
+        break;
+      case 'DEVOLVIDA':
+      case 'PENDING':
+      default:
+        profitLoss = 0;
     }
 
     // For combined bets, merge all selections into a single entry
@@ -614,23 +631,36 @@ export function NewBetForm({ onClose, onSubmit }: NewBetFormProps) {
               )}
               <div className={`space-y-2 ${betType === 'simple' ? 'col-span-2' : ''}`}>
                 <Label>Resultado</Label>
-                <Select 
-                  value={generalData.result} 
-                  onValueChange={(v) => setGeneralData({ ...generalData, result: v as BetResult })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PENDING">Pendente</SelectItem>
-                    <SelectItem value="GREEN">Ganha</SelectItem>
-                    <SelectItem value="RED">Perdida</SelectItem>
-                    <SelectItem value="GREEN_HALF">Ganhou Metade</SelectItem>
-                    <SelectItem value="RED_HALF">Perdeu Metade</SelectItem>
-                    <SelectItem value="CASHOUT">Cashout</SelectItem>
-                    <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select 
+                    value={generalData.result} 
+                    onValueChange={(v) => setGeneralData({ ...generalData, result: v as BetResult })}
+                  >
+                    <SelectTrigger className={generalData.result === 'CASHOUT' ? 'flex-1' : ''}>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PENDING">Pendente</SelectItem>
+                      <SelectItem value="GREEN">Ganha</SelectItem>
+                      <SelectItem value="RED">Perdida</SelectItem>
+                      <SelectItem value="GREEN_HALF">Ganhou Metade</SelectItem>
+                      <SelectItem value="RED_HALF">Perdeu Metade</SelectItem>
+                      <SelectItem value="CASHOUT">Cashout</SelectItem>
+                      <SelectItem value="DEVOLVIDA">Devolvida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {generalData.result === 'CASHOUT' && (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Valor recebido"
+                      value={generalData.cashoutValue}
+                      onChange={(e) => setGeneralData({ ...generalData, cashoutValue: e.target.value })}
+                      className="w-32"
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
