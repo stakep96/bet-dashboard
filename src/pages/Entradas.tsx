@@ -201,7 +201,7 @@ const Entradas = () => {
       result = result.filter(e => e.site === filters.site);
     }
 
-    // Apply sorting: Pending entries always on top, then sort by event date
+    // Apply sorting: Pending entries always on top, then sort by event date, then by created_at
     result.sort((a, b) => {
       // Pending entries first
       const aIsPending = a.resultado === 'Pendente';
@@ -229,6 +229,15 @@ const Entradas = () => {
           comparison = a.odd - b.odd;
           break;
       }
+      
+      // If primary sort is equal, sort by created_at (newest first for desc, oldest first for asc)
+      if (comparison === 0) {
+        const aCreated = new Date(a.data).getTime();
+        const bCreated = new Date(b.data).getTime();
+        const createdComparison = bCreated - aCreated; // Newest first by default
+        return filters.sortOrder === 'asc' ? -createdComparison : createdComparison;
+      }
+      
       return filters.sortOrder === 'asc' ? comparison : -comparison;
     });
 
