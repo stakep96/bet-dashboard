@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Table, 
   TableBody, 
@@ -13,7 +14,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Download, Plus, Upload, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Search, Download, Plus, Upload, Pencil, Trash2, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
 import { EditEntradaModal } from '@/components/forms/EditEntradaModal';
@@ -93,6 +94,7 @@ const Entradas = () => {
   const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterState>({
     dateFrom: undefined,
     dateTo: undefined,
@@ -117,6 +119,27 @@ const Entradas = () => {
   const { exportToCSV } = useExportCSV();
   
   const entradasDaBanca = getEntradasByBanca();
+
+  // Selection handlers
+  const handleToggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+      setSelectedIds(new Set(filteredEntradas.map(e => e.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
 
   // Get available months for the filter
   const availableMonths = useMemo(() => {
@@ -211,6 +234,16 @@ const Entradas = () => {
 
     return result;
   }, [entradasFiltradasPorMes, searchTerm, filters]);
+
+  // Calculate selected stats
+  const selectedStats = useMemo(() => {
+    const selectedEntradas = filteredEntradas.filter(e => selectedIds.has(e.id));
+    return {
+      count: selectedEntradas.length,
+      totalStake: selectedEntradas.reduce((sum, e) => sum + e.stake, 0),
+      totalProfit: selectedEntradas.reduce((sum, e) => sum + e.lucro, 0),
+    };
+  }, [filteredEntradas, selectedIds]);
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -448,6 +481,12 @@ const Entradas = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="text-xs">
+                      <TableHead className="w-10">
+                        <Checkbox 
+                          checked={selectedIds.size === filteredEntradas.length && filteredEntradas.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead className="text-xs">Data</TableHead>
                       <TableHead className="text-xs">Data Evento</TableHead>
                       <TableHead className="text-xs">Modalidade</TableHead>
@@ -469,7 +508,13 @@ const Entradas = () => {
                       const entradas = (entrada.entrada || '').split('|').map(e => e.trim()).filter(Boolean);
                       
                       return (
-                        <TableRow key={entrada.id} className="text-xs">
+                        <TableRow key={entrada.id} className={`text-xs ${selectedIds.has(entrada.id) ? 'bg-primary/5' : ''}`}>
+                          <TableCell className="py-2">
+                            <Checkbox 
+                              checked={selectedIds.has(entrada.id)}
+                              onCheckedChange={() => handleToggleSelection(entrada.id)}
+                            />
+                          </TableCell>
                           <TableCell className="text-muted-foreground text-xs py-2">{entrada.data}</TableCell>
                           <TableCell className="text-muted-foreground text-xs py-2">{entrada.dataEvento || '-'}</TableCell>
                           <TableCell className="py-2">
@@ -541,6 +586,38 @@ const Entradas = () => {
             </CardContent>
           </Card>
         </main>
+
+        {/* Selection footer bar */}
+        {selectedIds.size > 0 && (
+          <div className="fixed bottom-0 left-72 right-0 bg-card border-t border-border px-6 py-3 flex items-center gap-6 shadow-lg z-50">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Selecionados:</span>
+              <Badge variant="secondary" className="font-semibold">{selectedStats.count}</Badge>
+            </div>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Stake:</span>
+              <span className="font-medium text-sm">R$ {selectedStats.totalStake.toFixed(2)}</span>
+            </div>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Lucro:</span>
+              <span className={`font-medium text-sm ${selectedStats.totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {selectedStats.totalProfit >= 0 ? '+' : ''}R$ {selectedStats.totalProfit.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex-1" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setSelectedIds(new Set())}
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Limpar seleção
+            </Button>
+          </div>
+        )}
       </div>
 
       {showNewBetForm && (
