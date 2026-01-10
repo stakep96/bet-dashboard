@@ -516,6 +516,17 @@ const Entradas = () => {
                       const mercados = entrada.mercado.split('|').map(m => m.trim()).filter(Boolean);
                       const entradas = (entrada.entrada || '').split('|').map(e => e.trim()).filter(Boolean);
                       
+                      // Get the latest event date for combined bets
+                      const getLatestEventDate = (dateString: string | undefined) => {
+                        if (!dateString) return '-';
+                        const dates = dateString.split('|').map(d => d.trim()).filter(Boolean);
+                        if (dates.length === 0) return '-';
+                        if (dates.length === 1) return dates[0];
+                        // Sort dates and return the latest one
+                        const sortedDates = dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+                        return sortedDates[0];
+                      };
+                      
                       return (
                         <TableRow key={entrada.id} className={`text-xs ${selectedIds.has(entrada.id) ? 'bg-primary/5' : ''}`}>
                           <TableCell className="py-2">
@@ -525,7 +536,7 @@ const Entradas = () => {
                             />
                           </TableCell>
                           <TableCell className="text-muted-foreground text-xs py-2">{entrada.data}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs py-2">{entrada.dataEvento || '-'}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs py-2">{getLatestEventDate(entrada.dataEvento)}</TableCell>
                           <TableCell className="py-2">
                             <Badge variant="outline" className="text-xs">{entrada.modalidade}</Badge>
                           </TableCell>
