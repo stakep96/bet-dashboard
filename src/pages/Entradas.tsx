@@ -528,7 +528,7 @@ const Entradas = () => {
                       };
                       
                       return (
-                        <TableRow key={entrada.id} className={`text-xs ${selectedIds.has(entrada.id) ? 'bg-primary/5' : ''}`}>
+                        <TableRow key={entrada.id} className={`text-xs ${selectedIds.has(entrada.id) ? 'bg-primary/15' : ''}`}>
                           <TableCell className="py-2">
                             <Checkbox 
                               checked={selectedIds.has(entrada.id)}
@@ -609,7 +609,7 @@ const Entradas = () => {
 
         {/* Selection footer bar */}
         {selectedIds.size > 0 && (
-          <div className="fixed bottom-0 left-72 right-0 bg-card border-t border-border px-6 py-3 flex items-center gap-6 shadow-lg z-50">
+          <div className="fixed bottom-0 left-72 right-0 bg-card border-t border-border px-6 py-3 flex items-center justify-end gap-6 shadow-lg z-50">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Selecionados:</span>
               <Badge variant="secondary" className="font-semibold">{selectedStats.count}</Badge>
@@ -621,12 +621,12 @@ const Entradas = () => {
             </div>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Lucro:</span>
+              <span className="text-sm text-muted-foreground">Lucro/Perda:</span>
               <span className={`font-medium text-sm ${selectedStats.totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {selectedStats.totalProfit >= 0 ? '+' : ''}R$ {selectedStats.totalProfit.toFixed(2)}
               </span>
             </div>
-            <div className="flex-1" />
+            <div className="h-4 w-px bg-border" />
             <Button 
               variant="ghost" 
               size="sm" 
