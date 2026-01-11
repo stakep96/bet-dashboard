@@ -24,6 +24,7 @@ import { bookmakers } from '@/data/bookmakers';
 interface Saldo {
   id: string;
   name: string;
+  subtitle: string | null;
   currentBalance: number;
   initialBalance: number;
   bancaId: string | null;
@@ -49,6 +50,7 @@ const Saldos = () => {
   // Create dialog
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newSiteName, setNewSiteName] = useState('');
+  const [newSiteSubtitle, setNewSiteSubtitle] = useState('');
   const [newSiteBalance, setNewSiteBalance] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   
@@ -56,6 +58,7 @@ const Saldos = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [saldoToEdit, setSaldoToEdit] = useState<Saldo | null>(null);
   const [editName, setEditName] = useState('');
+  const [editSubtitle, setEditSubtitle] = useState('');
   const [editBalance, setEditBalance] = useState('');
   const [editInitialBalance, setEditInitialBalance] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -99,6 +102,7 @@ const Saldos = () => {
       setSaldos(saldosRes.data.map(s => ({
         id: s.id,
         name: s.name,
+        subtitle: (s as any).subtitle || null,
         currentBalance: Number(s.current_balance),
         initialBalance: Number(s.initial_balance),
         bancaId: s.banca_id
@@ -136,16 +140,18 @@ const Saldos = () => {
       const { error } = await supabase.from('saldos').insert({
         user_id: user.id,
         name: newSiteName.trim(),
+        subtitle: newSiteSubtitle.trim() || null,
         initial_balance: initialBalance,
         current_balance: initialBalance,
         banca_id: selectedBancaIds[0]
-      });
+      } as any);
       
       if (error) throw error;
       
       toast.success('Site adicionado com sucesso!');
       setIsDialogOpen(false);
       setNewSiteName('');
+      setNewSiteSubtitle('');
       setNewSiteBalance('');
       fetchData();
     } catch (err) {
@@ -160,6 +166,7 @@ const Saldos = () => {
     e.stopPropagation();
     setSaldoToEdit(saldo);
     setEditName(saldo.name);
+    setEditSubtitle(saldo.subtitle || '');
     setEditBalance(saldo.currentBalance.toString());
     setEditInitialBalance(saldo.initialBalance.toString());
     setIsEditDialogOpen(true);
@@ -172,9 +179,10 @@ const Saldos = () => {
     try {
       const { error } = await supabase.from('saldos').update({
         name: editName.trim(),
+        subtitle: editSubtitle.trim() || null,
         current_balance: parseFloat(editBalance) || 0,
         initial_balance: parseFloat(editInitialBalance) || 0
-      }).eq('id', saldoToEdit.id);
+      } as any).eq('id', saldoToEdit.id);
       
       if (error) throw error;
       
@@ -388,6 +396,15 @@ const Saldos = () => {
                     />
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="subtitle">Subtítulo (opcional)</Label>
+                    <Input 
+                      id="subtitle" 
+                      value={newSiteSubtitle}
+                      onChange={(e) => setNewSiteSubtitle(e.target.value)}
+                      placeholder="Ex: Conta João, Principal..."
+                    />
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="balance">Saldo Inicial (R$)</Label>
                     <Input 
                       id="balance" 
@@ -448,11 +465,16 @@ const Saldos = () => {
                 return (
                   <Card key={saldo.id} className="transition-all hover:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between py-4 px-5 pb-2">
-                      <CardTitle className="text-sm font-medium truncate">{saldo.name}</CardTitle>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-sm font-medium truncate">{saldo.name}</CardTitle>
+                        {saldo.subtitle && (
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">{saldo.subtitle}</p>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-7 w-7 shrink-0"
                         onClick={(e) => handleOpenEditDialog(saldo, e)}
                       >
                         <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -540,6 +562,15 @@ const Saldos = () => {
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     placeholder="Ex: Bet365, Betano..."
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-subtitle">Subtítulo (opcional)</Label>
+                  <Input 
+                    id="edit-subtitle" 
+                    value={editSubtitle}
+                    onChange={(e) => setEditSubtitle(e.target.value)}
+                    placeholder="Ex: Conta João, Principal..."
                   />
                 </div>
                 <div className="grid gap-2">
