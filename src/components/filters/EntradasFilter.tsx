@@ -64,17 +64,17 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
   // Get the actual selected sites for display
   const selectedSitesCount = filters.sites.length === 0 ? sites.length : filters.sites.length;
 
-  const handleSelectAllSites = () => {
-    // If all selected, keep empty (which means all)
-    // If some are deselected, select all (set to empty array)
+  const handleSelectAllSites = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Select all = set to empty array (which means all selected)
     updateFilter('sites', []);
   };
 
-  const handleClearAllSites = () => {
-    // This would show nothing, but we'll interpret it as "clear selection"
-    // Actually for UX, let's not allow clearing all - at least one must be selected
-    // But user asked for Google Sheets style, so clear means show nothing
-    // We'll represent "none selected" as an impossible state, redirect to selecting all
+  const handleClearAllSites = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Clear = reset filter to default (all selected)
     updateFilter('sites', []);
   };
 
@@ -260,21 +260,27 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0" align="start">
                   <div className="p-3 border-b">
-                    <div className="flex items-center justify-between mb-2">
-                      <button
+                    <div className="flex items-center gap-3 mb-2">
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-primary hover:no-underline"
                         onClick={handleSelectAllSites}
-                        className="text-sm text-primary hover:underline"
                       >
                         Selecionar tudo: {sites.length}
-                      </button>
-                      <span className="text-sm text-muted-foreground">-</span>
-                      <button
-                        onClick={handleSelectAllSites}
-                        className="text-sm text-primary hover:underline"
+                      </Button>
+                      <span className="text-muted-foreground">-</span>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-primary hover:no-underline"
+                        onClick={handleClearAllSites}
                       >
                         Limpar
-                      </button>
-                      <span className="text-sm text-muted-foreground">
+                      </Button>
+                      <span className="text-sm text-muted-foreground ml-auto">
                         Mostrando {selectedSitesCount}
                       </span>
                     </div>
