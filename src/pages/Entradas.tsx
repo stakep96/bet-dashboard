@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +22,27 @@ import { EntradasFilter, FilterState } from '@/components/filters/EntradasFilter
 import { useBanca, Entrada } from '@/contexts/BancaContext';
 import { useExportCSV } from '@/hooks/useExportCSV';
 import { startOfMonth, endOfMonth } from 'date-fns';
+
+// Custom hook to persist modal state across tab switches
+function useModalState<T>(initialValue: T): [T, (value: T | ((prev: T) => T)) => void, React.MutableRefObject<T>] {
+  const [state, setState] = useState<T>(initialValue);
+  const stateRef = useRef<T>(initialValue);
+  
+  const setStateStable = useCallback((value: T | ((prev: T) => T)) => {
+    if (typeof value === 'function') {
+      setState(prev => {
+        const newValue = (value as (prev: T) => T)(prev);
+        stateRef.current = newValue;
+        return newValue;
+      });
+    } else {
+      stateRef.current = value;
+      setState(value);
+    }
+  }, []);
+  
+  return [state, setStateStable, stateRef];
+}
 
 const parseCSV = (content: string): string[][] => {
   const rows: string[][] = [];
@@ -90,8 +111,10 @@ const mapResultado = (value: string): 'G' | 'P' | 'C' | 'D' | 'GM' | 'PM' | 'Pen
 };
 
 const Entradas = () => {
-  const [showNewBetForm, setShowNewBetForm] = useState(false);
-  const [editingEntrada, setEditingEntrada] = useState<Entrada | null>(null);
+  // Use stable modal state that persists across re-renders triggered by visibility changes
+  const [showNewBetForm, setShowNewBetForm, showNewBetFormRef] = useModalState(false);
+  const [editingEntrada, setEditingEntrada, editingEntradaRef] = useModalState<Entrada | null>(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<Date | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -106,6 +129,24 @@ const Entradas = () => {
     sortOrder: 'desc',
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Prevent visibility change from resetting modal state
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Restore modal state from refs when tab becomes visible
+        if (showNewBetFormRef.current && !showNewBetForm) {
+          setShowNewBetForm(true);
+        }
+        if (editingEntradaRef.current && !editingEntrada) {
+          setEditingEntrada(editingEntradaRef.current);
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [showNewBetForm, editingEntrada, setShowNewBetForm, setEditingEntrada, showNewBetFormRef, editingEntradaRef]);
   const { 
     getEntradasByBanca, 
     addEntradas, 
