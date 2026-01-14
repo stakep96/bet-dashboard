@@ -242,6 +242,15 @@ const Entradas = () => {
       result = result.filter(e => e.site === filters.site);
     }
 
+    // Helper to get the last date from a potentially multi-date string (for multiple bets)
+    const getLastEventDate = (dateStr: string | undefined, fallback: string): Date => {
+      if (!dateStr) return new Date(fallback + 'T00:00:00');
+      // For multiple bets, dates are separated by '|', use the last one for sorting
+      const dates = dateStr.split('|');
+      const lastDate = dates[dates.length - 1].trim();
+      return new Date(lastDate + 'T00:00:00');
+    };
+
     // Apply sorting: Pending entries always on top, then sort by event date, then by created_at
     result.sort((a, b) => {
       // Pending entries first
@@ -255,10 +264,10 @@ const Entradas = () => {
       let comparison = 0;
       switch (filters.sortBy) {
         case 'data':
-          // Sort by event date instead of registration date
-          const aEventDate = a.dataEvento || a.data;
-          const bEventDate = b.dataEvento || b.data;
-          comparison = new Date(aEventDate).getTime() - new Date(bEventDate).getTime();
+          // Sort by event date (using last date for multiple bets)
+          const aEventDate = getLastEventDate(a.dataEvento, a.data);
+          const bEventDate = getLastEventDate(b.dataEvento, b.data);
+          comparison = aEventDate.getTime() - bEventDate.getTime();
           break;
         case 'lucro':
           comparison = a.lucro - b.lucro;
@@ -273,8 +282,8 @@ const Entradas = () => {
       
       // If primary sort is equal, sort by created_at (newest first for desc, oldest first for asc)
       if (comparison === 0) {
-        const aCreated = new Date(a.data).getTime();
-        const bCreated = new Date(b.data).getTime();
+        const aCreated = new Date(a.data + 'T00:00:00').getTime();
+        const bCreated = new Date(b.data + 'T00:00:00').getTime();
         const createdComparison = bCreated - aCreated; // Newest first by default
         return filters.sortOrder === 'asc' ? -createdComparison : createdComparison;
       }
