@@ -124,7 +124,7 @@ const Entradas = () => {
     resultado: '',
     modalidade: '',
     mercado: '',
-    site: '',
+    sites: [], // Empty array means all sites selected
     sortBy: 'data',
     sortOrder: 'desc',
   });
@@ -238,8 +238,9 @@ const Entradas = () => {
     if (filters.mercado) {
       result = result.filter(e => e.mercado === filters.mercado);
     }
-    if (filters.site) {
-      result = result.filter(e => e.site === filters.site);
+    // Apply sites filter (multi-select)
+    if (filters.sites.length > 0) {
+      result = result.filter(e => filters.sites.includes(e.site));
     }
 
     // Helper to get the last date from a potentially multi-date string (for multiple bets)

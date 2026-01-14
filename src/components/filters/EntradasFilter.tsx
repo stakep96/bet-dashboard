@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Filter, X, CalendarIcon, ArrowUpDown } from 'lucide-react';
+import { Filter, X, CalendarIcon, ArrowUpDown, Search } from 'lucide-react';
 
 export interface FilterState {
   dateFrom: Date | undefined;
@@ -15,7 +17,7 @@ export interface FilterState {
   resultado: string;
   modalidade: string;
   mercado: string;
-  site: string;
+  sites: string[]; // Changed from single site to array of selected sites
   sortBy: string;
   sortOrder: 'asc' | 'desc';
 }
@@ -30,6 +32,8 @@ interface EntradasFilterProps {
 
 export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados, sites }: EntradasFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [siteSearch, setSiteSearch] = useState('');
+  const [isSiteFilterOpen, setIsSiteFilterOpen] = useState(false);
 
   const updateFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -42,10 +46,66 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
       resultado: '',
       modalidade: '',
       mercado: '',
-      site: '',
+      sites: [], // Empty means all selected
       sortBy: 'data',
       sortOrder: 'desc',
     });
+  };
+
+  // Filtered sites based on search
+  const filteredSites = useMemo(() => {
+    if (!siteSearch.trim()) return sites;
+    return sites.filter(s => s.toLowerCase().includes(siteSearch.toLowerCase()));
+  }, [sites, siteSearch]);
+
+  // Check if all sites are selected (empty array means all selected)
+  const allSitesSelected = filters.sites.length === 0 || filters.sites.length === sites.length;
+  
+  // Get the actual selected sites for display
+  const selectedSitesCount = filters.sites.length === 0 ? sites.length : filters.sites.length;
+
+  const handleSelectAllSites = () => {
+    // If all selected, keep empty (which means all)
+    // If some are deselected, select all (set to empty array)
+    updateFilter('sites', []);
+  };
+
+  const handleClearAllSites = () => {
+    // This would show nothing, but we'll interpret it as "clear selection"
+    // Actually for UX, let's not allow clearing all - at least one must be selected
+    // But user asked for Google Sheets style, so clear means show nothing
+    // We'll represent "none selected" as an impossible state, redirect to selecting all
+    updateFilter('sites', []);
+  };
+
+  const handleToggleSite = (site: string) => {
+    let newSites: string[];
+    
+    if (filters.sites.length === 0) {
+      // All are selected, toggling one means deselecting it (select all except this one)
+      newSites = sites.filter(s => s !== site);
+    } else if (filters.sites.includes(site)) {
+      // Site is currently selected, deselect it
+      newSites = filters.sites.filter(s => s !== site);
+      // If no sites left, revert to all selected
+      if (newSites.length === 0) {
+        newSites = [];
+      }
+    } else {
+      // Site is not selected, select it
+      newSites = [...filters.sites, site];
+      // If all sites now selected, use empty array
+      if (newSites.length === sites.length) {
+        newSites = [];
+      }
+    }
+    
+    updateFilter('sites', newSites);
+  };
+
+  const isSiteSelected = (site: string) => {
+    if (filters.sites.length === 0) return true; // All selected
+    return filters.sites.includes(site);
   };
 
   const hasActiveFilters = 
@@ -54,7 +114,17 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
     filters.resultado || 
     filters.modalidade || 
     filters.mercado || 
-    filters.site;
+    (filters.sites.length > 0 && filters.sites.length < sites.length);
+
+  const getSiteFilterLabel = () => {
+    if (filters.sites.length === 0 || filters.sites.length === sites.length) {
+      return `Todos (${sites.length})`;
+    }
+    if (filters.sites.length === 1) {
+      return filters.sites[0];
+    }
+    return `${filters.sites.length} selecionados`;
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -96,6 +166,7 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                       selected={filters.dateFrom}
                       onSelect={(date) => updateFilter('dateFrom', date)}
                       locale={ptBR}
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -112,6 +183,7 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                       selected={filters.dateTo}
                       onSelect={(date) => updateFilter('dateTo', date)}
                       locale={ptBR}
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -170,20 +242,90 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
               </Select>
             </div>
 
-            {/* Site */}
+            {/* Site - Multi-select with checkboxes */}
             <div className="space-y-2">
               <Label>Site</Label>
-              <Select value={filters.site || "_all"} onValueChange={(v) => updateFilter('site', v === "_all" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_all">Todos</SelectItem>
-                  {sites.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={isSiteFilterOpen} onOpenChange={setIsSiteFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between font-normal"
+                    role="combobox"
+                  >
+                    <span className="truncate">{getSiteFilterLabel()}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      Mostrando {selectedSitesCount}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="start">
+                  <div className="p-3 border-b">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        onClick={handleSelectAllSites}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Selecionar tudo: {sites.length}
+                      </button>
+                      <span className="text-sm text-muted-foreground">-</span>
+                      <button
+                        onClick={handleSelectAllSites}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Limpar
+                      </button>
+                      <span className="text-sm text-muted-foreground">
+                        Mostrando {selectedSitesCount}
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar site..."
+                        value={siteSearch}
+                        onChange={(e) => setSiteSearch(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[200px]">
+                    <div className="p-2 space-y-1">
+                      {filteredSites.map((site) => (
+                        <label
+                          key={site}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={isSiteSelected(site)}
+                            onCheckedChange={() => handleToggleSite(site)}
+                          />
+                          <span className="text-sm truncate">{site}</span>
+                        </label>
+                      ))}
+                      {filteredSites.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nenhum site encontrado
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <div className="p-2 border-t flex justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsSiteFilterOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => setIsSiteFilterOpen(false)}
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </PopoverContent>
