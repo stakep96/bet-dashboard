@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,21 +17,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Track the last user ID to avoid unnecessary state updates that cause re-renders
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        const newUserId = newSession?.user?.id ?? null;
+        
+        // Only update state if the user actually changed
+        // This prevents re-renders when tab visibility changes trigger token refresh
+        if (newUserId !== lastUserIdRef.current) {
+          lastUserIdRef.current = newUserId;
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+        }
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      const existingUserId = existingSession?.user?.id ?? null;
+      if (existingUserId !== lastUserIdRef.current) {
+        lastUserIdRef.current = existingUserId;
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
+      }
       setLoading(false);
     });
 
