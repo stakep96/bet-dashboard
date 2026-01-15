@@ -43,7 +43,7 @@ export function WinRateChart() {
 
   if (!hasData) {
     return (
-      <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
+      <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-muted-foreground">Taxa de Acerto</h3>
         </div>
@@ -55,24 +55,24 @@ export function WinRateChart() {
   }
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-muted-foreground">Taxa de Acerto</h3>
         <button className="text-xs text-primary font-medium hover:underline">
           Detalhes
         </button>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="h-[160px] w-[160px]">
+      <div className="flex items-center gap-3">
+        <div className="h-[130px] w-[130px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={45}
-                outerRadius={70}
+                innerRadius={38}
+                outerRadius={58}
                 paddingAngle={3}
                 dataKey="value"
               >
@@ -85,21 +85,21 @@ export function WinRateChart() {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex-1">
-          <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
-          <p className="text-sm text-muted-foreground mt-1">Win Rate</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-2xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
+          <p className="text-xs text-muted-foreground mb-2">Win Rate</p>
           
-          <div className="mt-3 space-y-1.5">
+          <div className="space-y-1">
             {allResults.map((item, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={index} className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <div 
-                    className="w-2.5 h-2.5 rounded-full" 
+                    className="w-2 h-2 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-xs">{item.name}</span>
+                  <span className="text-[10px] truncate">{item.name}</span>
                 </div>
-                <span className="text-xs font-medium">{item.value}</span>
+                <span className="text-[10px] font-medium flex-shrink-0">{item.value}</span>
               </div>
             ))}
           </div>

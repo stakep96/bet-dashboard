@@ -115,6 +115,50 @@ export type Database = {
           },
         ]
       }
+      metas: {
+        Row: {
+          ano: number
+          banca_id: string | null
+          created_at: string
+          id: string
+          mes: number | null
+          tipo: string
+          updated_at: string
+          user_id: string
+          valor_meta: number
+        }
+        Insert: {
+          ano: number
+          banca_id?: string | null
+          created_at?: string
+          id?: string
+          mes?: number | null
+          tipo: string
+          updated_at?: string
+          user_id: string
+          valor_meta?: number
+        }
+        Update: {
+          ano?: number
+          banca_id?: string | null
+          created_at?: string
+          id?: string
+          mes?: number | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valor_meta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_banca_id_fkey"
+            columns: ["banca_id"]
+            isOneToOne: false
+            referencedRelation: "bancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

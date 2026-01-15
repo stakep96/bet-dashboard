@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { BankrollChart } from '@/components/dashboard/BankrollChart';
 import { WinRateChart } from '@/components/dashboard/WinRateChart';
+import { GoalsCard } from '@/components/dashboard/GoalsCard';
 import { DailyPnLChart } from '@/components/dashboard/DailyPnLChart';
 import { RecentBets } from '@/components/dashboard/RecentBets';
 import { MonthlyPerformance } from '@/components/dashboard/MonthlyPerformance';
@@ -112,12 +113,17 @@ const Index = () => {
             />
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            <div className="lg:col-span-2">
+          {/* Charts Row - adjusted column spans */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+            <div className="lg:col-span-6">
               <BankrollChart />
             </div>
-            <WinRateChart />
+            <div className="lg:col-span-3">
+              <WinRateChart />
+            </div>
+            <div className="lg:col-span-3">
+              <GoalsCard />
+            </div>
           </div>
 
           {/* PNL Chart */}
