@@ -274,17 +274,7 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0" align="start">
                   <div className="p-3 border-b">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="sm"
-                        className="h-auto p-0 text-primary hover:no-underline"
-                        onClick={handleSelectAllSites}
-                      >
-                        Selecionar tudo: {sites.length}
-                      </Button>
-                      <span className="text-muted-foreground">-</span>
+                    <div className="flex items-center justify-between">
                       <Button
                         type="button"
                         variant="link"
@@ -294,11 +284,17 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                       >
                         Limpar
                       </Button>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-primary hover:no-underline"
+                        onClick={handleSelectAllSites}
+                      >
+                        Selecionar tudo: {sites.length}
+                      </Button>
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      Mostrando {selectedSitesCount}
-                    </div>
-                    <div className="relative">
+                    <div className="relative mt-2">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Buscar site..."
