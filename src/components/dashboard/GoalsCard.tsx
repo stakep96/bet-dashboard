@@ -188,13 +188,9 @@ export function GoalsCard() {
   };
 
   // Arc path calculation for progress gauge
-  const getArcPath = (percentage: number) => {
+  const getArcPath = (percentage: number, radius: number, cx: number, cy: number) => {
     const startAngle = -180;
     const endAngle = startAngle + (percentage / 100) * 180;
-    
-    const radius = 60;
-    const cx = 70;
-    const cy = 70;
     
     const startRad = (startAngle * Math.PI) / 180;
     const endRad = (endAngle * Math.PI) / 180;
@@ -208,6 +204,8 @@ export function GoalsCard() {
     
     return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
   };
+
+  const isGoalMet = progressData.percentage >= 100;
 
   const periodLabel = selectedPeriod === 'anual' 
     ? 'Anual' 
@@ -307,49 +305,51 @@ export function GoalsCard() {
       </div>
 
       {/* Progress Arc */}
-      <div className="flex flex-col items-center justify-center py-2">
-        <div className="relative">
-          <svg width="140" height="85" viewBox="0 0 140 85">
+      <div className="flex flex-col items-center justify-center flex-1">
+        <div className="relative w-full flex justify-center">
+          <svg width="200" height="110" viewBox="0 0 200 110">
             {/* Background arc */}
             <path
-              d={getArcPath(100)}
+              d={getArcPath(100, 85, 100, 95)}
               fill="none"
               stroke="hsl(var(--muted))"
-              strokeWidth="10"
+              strokeWidth="12"
               strokeLinecap="round"
             />
             {/* Progress arc */}
             {progressData.percentage > 0 && (
               <path
-                d={getArcPath(progressData.percentage)}
+                d={getArcPath(progressData.percentage, 85, 100, 95)}
                 fill="none"
                 stroke="hsl(var(--success))"
-                strokeWidth="10"
+                strokeWidth="12"
                 strokeLinecap="round"
               />
             )}
             {/* End dot */}
             {progressData.percentage > 0 && (
               <circle
-                cx={70 + 60 * Math.cos(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
-                cy={70 + 60 * Math.sin(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
-                r="5"
+                cx={100 + 85 * Math.cos(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
+                cy={95 + 85 * Math.sin(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
+                r="6"
                 fill="hsl(var(--success))"
               />
             )}
           </svg>
-          
-          {/* Center value */}
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-0">
-            <span className="text-xl font-bold">
-              R$ {progressData.currentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-            {progressData.hasMeta && (
-              <span className="text-xs text-muted-foreground">
-                de R$ {progressData.targetValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-              </span>
-            )}
+        </div>
+        
+        {/* Values below the arc */}
+        <div className="text-center -mt-2">
+          <div className="text-2xl font-bold">
+            {isGoalMet && '🎉 '}
+            R$ {progressData.currentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {isGoalMet && ' 🎉'}
           </div>
+          {progressData.hasMeta && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              de R$ {progressData.targetValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+            </p>
+          )}
         </div>
         
         {!progressData.hasMeta && (
@@ -359,7 +359,7 @@ export function GoalsCard() {
         )}
         
         {progressData.hasMeta && (
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-sm text-success font-medium mt-1">
             {progressData.percentage.toFixed(1)}% da meta
           </p>
         )}

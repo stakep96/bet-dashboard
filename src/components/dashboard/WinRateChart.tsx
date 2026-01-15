@@ -55,24 +55,29 @@ export function WinRateChart() {
   }
 
   return (
-    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-medium text-muted-foreground">Taxa de Acerto</h3>
         <button className="text-xs text-primary font-medium hover:underline">
           Detalhes
         </button>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="h-[130px] w-[130px] flex-shrink-0">
+      {/* Win Rate and Pie Chart */}
+      <div className="flex items-center justify-center gap-4 mb-3">
+        <div className="text-center">
+          <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
+          <p className="text-xs text-muted-foreground">Win Rate</p>
+        </div>
+        <div className="h-[100px] w-[100px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={38}
-                outerRadius={58}
+                innerRadius={30}
+                outerRadius={45}
                 paddingAngle={3}
                 dataKey="value"
               >
@@ -84,26 +89,22 @@ export function WinRateChart() {
             </PieChart>
           </ResponsiveContainer>
         </div>
+      </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-2xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
-          <p className="text-xs text-muted-foreground mb-2">Win Rate</p>
-          
-          <div className="space-y-1">
-            {allResults.map((item, index) => (
-              <div key={index} className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0" 
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-[10px] truncate">{item.name}</span>
-                </div>
-                <span className="text-[10px] font-medium flex-shrink-0">{item.value}</span>
-              </div>
-            ))}
+      {/* Legend below */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-auto">
+        {allResults.map((item, index) => (
+          <div key={index} className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div 
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-xs truncate">{item.name}</span>
+            </div>
+            <span className="text-xs font-semibold flex-shrink-0">{item.value}</span>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

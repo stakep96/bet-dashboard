@@ -178,9 +178,11 @@ export function BankrollChart() {
                 }
                 return `R$${value.toFixed(0)}`;
               }}
-              tickCount={6}
               width={55}
               domain={yAxisDomain}
+              allowDecimals={false}
+              type="number"
+              scale="linear"
             />
             <Tooltip 
               content={({ active, payload }) => {
