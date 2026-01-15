@@ -64,8 +64,8 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
   // Check if no sites are selected (all sites in array means none should show)
   const noSitesSelected = filters.sites.length === sites.length && sites.every(s => filters.sites.includes(s));
   
-  // Get the actual selected sites for display
-  const selectedSitesCount = noSitesSelected ? 0 : (filters.sites.length === 0 ? sites.length : filters.sites.length);
+  // Get the actual selected sites count (sites NOT in exclusion list)
+  const selectedSitesCount = noSitesSelected ? 0 : (filters.sites.length === 0 ? sites.length : sites.length - filters.sites.length);
 
   const handleSelectAllSites = (e: React.MouseEvent) => {
     e.preventDefault();
