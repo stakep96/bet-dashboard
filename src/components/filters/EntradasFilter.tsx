@@ -280,18 +280,18 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                         variant="link"
                         size="sm"
                         className="h-auto p-0 text-primary hover:no-underline"
-                        onClick={handleClearAllSites}
+                        onClick={handleSelectAllSites}
                       >
-                        Limpar
+                        Selecionar tudo: {sites.length}
                       </Button>
                       <Button
                         type="button"
                         variant="link"
                         size="sm"
                         className="h-auto p-0 text-primary hover:no-underline"
-                        onClick={handleSelectAllSites}
+                        onClick={handleClearAllSites}
                       >
-                        Selecionar tudo: {sites.length}
+                        Limpar
                       </Button>
                     </div>
                     <div className="relative mt-2">
