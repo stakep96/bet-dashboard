@@ -59,10 +59,13 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
   }, [sites, siteSearch]);
 
   // Check if all sites are selected (empty array means all selected)
-  const allSitesSelected = filters.sites.length === 0 || filters.sites.length === sites.length;
+  const allSitesSelected = filters.sites.length === 0;
+  
+  // Check if no sites are selected (all sites in array means none should show)
+  const noSitesSelected = filters.sites.length === sites.length && sites.every(s => filters.sites.includes(s));
   
   // Get the actual selected sites for display
-  const selectedSitesCount = filters.sites.length === 0 ? sites.length : filters.sites.length;
+  const selectedSitesCount = noSitesSelected ? 0 : (filters.sites.length === 0 ? sites.length : filters.sites.length);
 
   const handleSelectAllSites = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,29 +77,36 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
   const handleClearAllSites = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Clear = deselect all sites
-    updateFilter('sites', sites);
+    // Clear = deselect all sites (set all sites in array to indicate none selected)
+    updateFilter('sites', [...sites]);
   };
 
   const handleToggleSite = (site: string) => {
     let newSites: string[];
     
+    // Empty array = all selected
     if (filters.sites.length === 0) {
-      // All are selected, toggling one means deselecting it (select all except this one)
-      newSites = sites.filter(s => s !== site);
-    } else if (filters.sites.includes(site)) {
-      // Site is currently selected, deselect it
-      newSites = filters.sites.filter(s => s !== site);
-      // If no sites left, revert to all selected
-      if (newSites.length === 0) {
-        newSites = [];
-      }
+      // All are selected, toggling one means deselecting it (add to exclusion list)
+      newSites = [site];
     } else {
-      // Site is not selected, select it
-      newSites = [...filters.sites, site];
-      // If all sites now selected, use empty array
-      if (newSites.length === sites.length) {
-        newSites = [];
+      // Check if all sites are currently excluded (none selected)
+      const allExcluded = filters.sites.length === sites.length && 
+        sites.every(s => filters.sites.includes(s));
+      
+      if (allExcluded) {
+        // None are selected, toggling one means selecting only it
+        // Remove from exclusion list = select it (show all except the excluded ones)
+        newSites = sites.filter(s => s !== site);
+      } else if (filters.sites.includes(site)) {
+        // Site is in exclusion list (deselected), remove from exclusion (select it)
+        newSites = filters.sites.filter(s => s !== site);
+        // If exclusion list is now empty, all are selected
+        if (newSites.length === 0) {
+          newSites = [];
+        }
+      } else {
+        // Site is not in exclusion list (selected), add to exclusion (deselect it)
+        newSites = [...filters.sites, site];
       }
     }
     
@@ -104,8 +114,12 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
   };
 
   const isSiteSelected = (site: string) => {
-    if (filters.sites.length === 0) return true; // All selected
-    return filters.sites.includes(site);
+    // Empty array = all selected
+    if (filters.sites.length === 0) return true;
+    // All sites in array = none selected (inverted logic for "Limpar")
+    if (filters.sites.length === sites.length && sites.every(s => filters.sites.includes(s))) return false;
+    // Otherwise, check if site is NOT in the exclusion list
+    return !filters.sites.includes(site);
   };
 
   const hasActiveFilters = 

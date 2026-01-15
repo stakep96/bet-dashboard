@@ -239,8 +239,20 @@ const Entradas = () => {
       result = result.filter(e => e.mercado === filters.mercado);
     }
     // Apply sites filter (multi-select)
+    // Empty array = all selected (no filter)
+    // Array with all sites = none selected (show nothing)
+    // Array with some sites = exclusion list (show sites NOT in array)
     if (filters.sites.length > 0) {
-      result = result.filter(e => filters.sites.includes(e.site));
+      const allSitesExcluded = filters.sites.length === sites.length && 
+        sites.every(s => filters.sites.includes(s));
+      
+      if (allSitesExcluded) {
+        // All sites in array = none selected, show nothing
+        result = [];
+      } else {
+        // Array contains excluded sites, show entries NOT in the exclusion list
+        result = result.filter(e => !filters.sites.includes(e.site));
+      }
     }
 
     // Helper to get the last date from a potentially multi-date string (for multiple bets)
