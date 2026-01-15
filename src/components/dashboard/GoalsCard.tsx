@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, ChevronDown, Check } from 'lucide-react';
+import { Pencil, ChevronDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,9 +47,8 @@ export function GoalsCard() {
   const [selectedPeriod, setSelectedPeriod] = useState<'anual' | number>('anual');
   const [periodOpen, setPeriodOpen] = useState(false);
   
-  // Form states
-  const [formTipo, setFormTipo] = useState<'mensal' | 'anual'>('mensal');
-  const [formMes, setFormMes] = useState<number>(new Date().getMonth() + 1);
+  // Form states - now derived from which period's edit button was clicked
+  const [editingPeriod, setEditingPeriod] = useState<'anual' | number | null>(null);
   const [formValor, setFormValor] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -120,22 +117,41 @@ export function GoalsCard() {
     };
   }, [selectedPeriod, metas, metrics.totalPnL, monthlyStats]);
 
-  // Create meta
-  const handleCreateMeta = async () => {
-    if (!user || !formValor) return;
+  // Get meta value for a specific period
+  const getMetaForPeriod = (period: 'anual' | number) => {
+    if (period === 'anual') {
+      return metas.find(m => m.tipo === 'anual');
+    }
+    return metas.find(m => m.tipo === 'mensal' && m.mes === period);
+  };
+
+  // Open edit dialog for a period
+  const handleEditClick = (e: React.MouseEvent, period: 'anual' | number) => {
+    e.stopPropagation();
+    const existingMeta = getMetaForPeriod(period);
+    setEditingPeriod(period);
+    setFormValor(existingMeta ? String(existingMeta.valor_meta) : '');
+    setShowCreateDialog(true);
+  };
+
+  // Create/update meta
+  const handleSaveMeta = async () => {
+    if (!user || !formValor || editingPeriod === null) return;
     
     setLoading(true);
     
     try {
       const bancaId = selectedBancaIds.length === 1 ? selectedBancaIds[0] : null;
+      const tipo = editingPeriod === 'anual' ? 'anual' : 'mensal';
+      const mes = editingPeriod === 'anual' ? null : editingPeriod;
       
       const { error } = await supabase
         .from('metas')
         .upsert({
           user_id: user.id,
           banca_id: bancaId,
-          tipo: formTipo,
-          mes: formTipo === 'mensal' ? formMes : null,
+          tipo,
+          mes,
           ano: currentYear,
           valor_meta: parseFloat(formValor.replace(',', '.')),
         }, {
@@ -144,9 +160,10 @@ export function GoalsCard() {
       
       if (error) throw error;
       
-      toast.success('Meta criada com sucesso!');
+      toast.success('Meta salva com sucesso!');
       setShowCreateDialog(false);
       setFormValor('');
+      setEditingPeriod(null);
       
       // Refresh metas
       const query = supabase
@@ -163,8 +180,8 @@ export function GoalsCard() {
         setMetas((data || []) as Meta[]);
       }
     } catch (error) {
-      console.error('Error creating meta:', error);
-      toast.error('Erro ao criar meta');
+      console.error('Error saving meta:', error);
+      toast.error('Erro ao salvar meta');
     } finally {
       setLoading(false);
     }
@@ -196,6 +213,11 @@ export function GoalsCard() {
     ? 'Anual' 
     : MONTHS.find(m => m.value === selectedPeriod)?.label || '';
 
+  const getEditingPeriodLabel = () => {
+    if (editingPeriod === 'anual') return 'Anual';
+    return MONTHS.find(m => m.value === editingPeriod)?.label || '';
+  };
+
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm h-full">
       <div className="flex items-center justify-between mb-4">
@@ -206,32 +228,50 @@ export function GoalsCard() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
-          {/* Period Selector */}
-          <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-xs">
-                {periodLabel}
-                <ChevronDown className="ml-1 h-3 w-3" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-0" align="end">
-              <Command>
-                <CommandInput placeholder="Buscar mês..." />
-                <CommandList>
-                  <CommandEmpty>Nenhum resultado</CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem
-                      value="anual"
-                      onSelect={() => {
-                        setSelectedPeriod('anual');
-                        setPeriodOpen(false);
-                      }}
-                    >
+        {/* Period Selector */}
+        <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 text-xs">
+              {periodLabel}
+              <ChevronDown className="ml-1 h-3 w-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-0" align="end">
+            <Command>
+              <CommandInput placeholder="Buscar mês..." />
+              <CommandList>
+                <CommandEmpty>Nenhum resultado</CommandEmpty>
+                <CommandGroup>
+                  {/* Annual option */}
+                  <CommandItem
+                    value="anual"
+                    onSelect={() => {
+                      setSelectedPeriod('anual');
+                      setPeriodOpen(false);
+                    }}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
                       <Check className={cn("mr-2 h-4 w-4", selectedPeriod === 'anual' ? "opacity-100" : "opacity-0")} />
-                      Anual
-                    </CommandItem>
-                    {MONTHS.map((month) => (
+                      <span>Anual</span>
+                      {getMetaForPeriod('anual') && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (R$ {getMetaForPeriod('anual')?.valor_meta.toLocaleString('pt-BR')})
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => handleEditClick(e, 'anual')}
+                      className="p-1 hover:bg-accent rounded"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  </CommandItem>
+                  
+                  {/* Monthly options */}
+                  {MONTHS.map((month) => {
+                    const meta = getMetaForPeriod(month.value);
+                    return (
                       <CommandItem
                         key={month.value}
                         value={month.label}
@@ -239,28 +279,31 @@ export function GoalsCard() {
                           setSelectedPeriod(month.value);
                           setPeriodOpen(false);
                         }}
+                        className="flex items-center justify-between"
                       >
-                        <Check className={cn("mr-2 h-4 w-4", selectedPeriod === month.value ? "opacity-100" : "opacity-0")} />
-                        {month.label}
+                        <div className="flex items-center">
+                          <Check className={cn("mr-2 h-4 w-4", selectedPeriod === month.value ? "opacity-100" : "opacity-0")} />
+                          <span>{month.label}</span>
+                          {meta && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              (R$ {meta.valor_meta.toLocaleString('pt-BR')})
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => handleEditClick(e, month.value)}
+                          className="p-1 hover:bg-accent rounded"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                        </button>
                       </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          
-          {/* Create Meta Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => setShowCreateDialog(true)}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            Nova Meta
-          </Button>
-        </div>
+                    );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Progress Arc */}
@@ -322,45 +365,22 @@ export function GoalsCard() {
         )}
       </div>
 
-      {/* Create Meta Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      {/* Edit Meta Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (!open) {
+          setEditingPeriod(null);
+          setFormValor('');
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Criar Nova Meta</DialogTitle>
+            <DialogTitle>
+              {getMetaForPeriod(editingPeriod!) ? 'Editar' : 'Criar'} Meta - {getEditingPeriodLabel()}
+            </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Tipo de Meta</Label>
-              <Select value={formTipo} onValueChange={(v: 'mensal' | 'anual') => setFormTipo(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mensal">Meta Mensal</SelectItem>
-                  <SelectItem value="anual">Meta Anual</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {formTipo === 'mensal' && (
-              <div className="space-y-2">
-                <Label>Mês</Label>
-                <Select value={String(formMes)} onValueChange={(v) => setFormMes(Number(v))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((month) => (
-                      <SelectItem key={month.value} value={String(month.value)}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
             <div className="space-y-2">
               <Label>Valor da Meta (R$)</Label>
               <div className="relative">
@@ -382,7 +402,7 @@ export function GoalsCard() {
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateMeta} disabled={loading || !formValor}>
+            <Button onClick={handleSaveMeta} disabled={loading || !formValor}>
               {loading ? 'Salvando...' : 'Salvar Meta'}
             </Button>
           </DialogFooter>
