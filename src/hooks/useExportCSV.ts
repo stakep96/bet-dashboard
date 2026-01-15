@@ -64,6 +64,9 @@ export function useExportCSV() {
       'Pendente': 'Pendente'
     };
 
+    // Use Brazilian format: semicolon separator, comma for decimals
+    const formatNumber = (num: number) => num.toFixed(2).replace('.', ',');
+
     const rows = filtered.map(e => [
       e.data,
       e.modalidade,
@@ -71,17 +74,17 @@ export function useExportCSV() {
       `"${e.evento.replace(/"/g, '""')}"`,
       `"${e.mercado.replace(/"/g, '""')}"`,
       `"${(e.entrada || '').replace(/"/g, '""')}"`,
-      e.odd.toFixed(2),
-      e.stake.toFixed(2),
+      formatNumber(e.odd),
+      formatNumber(e.stake),
       resultadoMap[e.resultado] || e.resultado,
-      e.lucro.toFixed(2),
+      formatNumber(e.lucro),
       e.timing,
       e.site
     ]);
 
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
+      headers.join(';'),
+      ...rows.map(row => row.join(';'))
     ].join('\n');
 
     // Download file
