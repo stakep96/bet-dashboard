@@ -131,13 +131,19 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
     (filters.sites.length > 0 && filters.sites.length < sites.length);
 
   const getSiteFilterLabel = () => {
-    if (filters.sites.length === 0 || filters.sites.length === sites.length) {
+    // Use selectedSitesCount which properly accounts for exclusion list logic
+    if (selectedSitesCount === sites.length) {
       return `Todos (${sites.length})`;
     }
-    if (filters.sites.length === 1) {
-      return filters.sites[0];
+    if (selectedSitesCount === 0) {
+      return 'Nenhum';
     }
-    return `${filters.sites.length} selecionados`;
+    if (selectedSitesCount === 1) {
+      // Find the one selected site (not in exclusion list)
+      const selectedSite = sites.find(s => !filters.sites.includes(s));
+      return selectedSite || '1 selecionado';
+    }
+    return `${selectedSitesCount} selecionados`;
   };
 
   return (
@@ -325,6 +331,14 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                       )}
                     </div>
                   </ScrollArea>
+                  <div className="p-2 border-t flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedSitesCount} selecionados
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      Mostrando {selectedSitesCount}
+                    </span>
+                  </div>
                   <div className="p-2 border-t flex justify-end gap-2">
                     <Button 
                       variant="outline" 
