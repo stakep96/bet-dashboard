@@ -74,8 +74,8 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
   const handleClearAllSites = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Clear = reset filter to default (all selected)
-    updateFilter('sites', []);
+    // Clear = deselect all sites
+    updateFilter('sites', sites);
   };
 
   const handleToggleSite = (site: string) => {
@@ -260,7 +260,7 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0" align="start">
                   <div className="p-3 border-b">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Button
                         type="button"
                         variant="link"
@@ -280,9 +280,9 @@ export function EntradasFilter({ filters, onFiltersChange, modalidades, mercados
                       >
                         Limpar
                       </Button>
-                      <span className="text-sm text-muted-foreground ml-auto">
-                        Mostrando {selectedSitesCount}
-                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Mostrando {selectedSitesCount}
                     </div>
                     <div className="relative">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
