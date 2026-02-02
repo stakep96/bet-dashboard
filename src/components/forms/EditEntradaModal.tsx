@@ -220,14 +220,13 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
         const combinedEvent = selections.map(s => s.match).filter(Boolean).join(' | ');
         const combinedMarket = selections.map(s => s.market).filter(Boolean).join(' | ');
         const combinedEntry = selections.map(s => s.entry).filter(Boolean).join(' | ');
-        const combinedEventDates = selections.map(s => s.eventDate).filter(Boolean).join(' | ');
         const combinedTimings = selections.map(s => s.timing).filter(Boolean).join(' | ');
         const modality = selections[0]?.modality || 'OUTRO';
 
         updatedEntrada = {
           ...entrada,
           data: generalData.createdAt,
-          dataEvento: combinedEventDates,
+          dataEvento: generalData.eventDate,
           modalidade: modality,
           evento: combinedEvent,
           mercado: combinedMarket,
