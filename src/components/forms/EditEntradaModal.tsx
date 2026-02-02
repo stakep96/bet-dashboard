@@ -33,6 +33,31 @@ interface BetSelection {
 
 const timings: BetTiming[] = ['PRÉ', 'LIVE'];
 
+// Função para normalizar datas de qualquer formato para YYYY-MM-DD (formato esperado pelo input date)
+const normalizeToISODate = (value: string | null | undefined): string => {
+  if (!value) return new Date().toISOString().split('T')[0];
+  const v = String(value).trim();
+  if (!v) return new Date().toISOString().split('T')[0];
+
+  // Já está em YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+  // DD/MM/YYYY ou DD-MM-YYYY
+  const m = v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (m) {
+    const day = String(m[1]).padStart(2, '0');
+    const month = String(m[2]).padStart(2, '0');
+    const year = m[3];
+    return `${year}-${month}-${day}`;
+  }
+
+  // Fallback: tentar parse ISO
+  const d = new Date(v);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().split('T')[0];
+
+  return new Date().toISOString().split('T')[0];
+};
+
 const createEmptySelection = (): BetSelection => ({
   id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
   match: '',
@@ -83,7 +108,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
         market: parsedMarkets[index] || '',
         entry: entries[index] || '',
         odd: '',
-        eventDate: eventDates[index] || entrada.dataEvento || entrada.data,
+        eventDate: normalizeToISODate(eventDates[index] || entrada.dataEvento || entrada.data),
         timing: (timings[index] as BetTiming) || 'PRÉ'
       }));
       
@@ -100,7 +125,7 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
         market: entrada.mercado || '',
         entry: entrada.entrada || '',
         odd: entrada.odd?.toString() || '',
-        eventDate: entrada.dataEvento || entrada.data,
+        eventDate: normalizeToISODate(entrada.dataEvento || entrada.data),
         timing: (entrada.timing as BetTiming) || 'PRÉ'
       };
       setSelections([sel]);
@@ -111,8 +136,8 @@ export function EditEntradaModal({ entrada, onClose, onSave, onDelete }: EditEnt
     const cashoutVal = entrada.resultado === 'C' ? (entrada.stake + entrada.lucro).toString() : '';
     
     setGeneralData({
-      createdAt: entrada.data,
-      eventDate: entrada.dataEvento || entrada.data,
+      createdAt: normalizeToISODate(entrada.data),
+      eventDate: normalizeToISODate(entrada.dataEvento || entrada.data),
       stake: entrada.stake.toString(),
       result: entrada.resultado,
       bookmaker: entrada.site || '',
