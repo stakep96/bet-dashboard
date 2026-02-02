@@ -5,7 +5,8 @@ export function WinRateChart() {
   const { metrics, hasData } = useDashboardMetrics();
 
   // Dados completos para exibição (incluindo valores zerados na legenda)
-  const allResults = [
+  // Ordenados do maior para o menor valor
+  const allResultsSorted = [
     { name: 'Ganhas', value: metrics.wins - metrics.halfWins, color: 'hsl(142, 71%, 45%)' },
     { name: 'Perdidas', value: metrics.losses - metrics.halfLosses, color: 'hsl(0, 72%, 51%)' },
     { name: 'Ganhou Metade', value: metrics.halfWins, color: 'hsl(142, 71%, 65%)' },
@@ -15,8 +16,13 @@ export function WinRateChart() {
     { name: 'Pendente', value: metrics.pending, color: 'hsl(220, 14%, 71%)' },
   ].sort((a, b) => b.value - a.value);
 
+  // Dividir em duas colunas: primeiro metade na coluna 1 (de cima para baixo), depois na coluna 2
+  const halfLength = Math.ceil(allResultsSorted.length / 2);
+  const column1 = allResultsSorted.slice(0, halfLength);
+  const column2 = allResultsSorted.slice(halfLength);
+
   // Dados para o gráfico de pizza (apenas valores > 0)
-  const chartData = allResults.filter(item => item.value > 0);
+  const chartData = allResultsSorted.filter(item => item.value > 0);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -63,21 +69,17 @@ export function WinRateChart() {
         </button>
       </div>
 
-      {/* Win Rate and Pie Chart */}
-      <div className="flex items-center justify-center gap-4 mb-3">
-        <div className="text-center">
-          <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
-          <p className="text-xs text-muted-foreground">Win Rate</p>
-        </div>
-        <div className="h-[100px] w-[100px] flex-shrink-0">
+      {/* Pie Chart and Win Rate side by side */}
+      <div className="flex items-center justify-center gap-6 mb-4">
+        <div className="h-[140px] w-[140px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={30}
-                outerRadius={45}
+                innerRadius={45}
+                outerRadius={65}
                 paddingAngle={3}
                 dataKey="value"
               >
@@ -89,22 +91,44 @@ export function WinRateChart() {
             </PieChart>
           </ResponsiveContainer>
         </div>
+        <div className="text-center">
+          <p className="text-3xl font-bold text-success">{metrics.winRate.toFixed(1)}%</p>
+          <p className="text-xs text-muted-foreground">Win Rate</p>
+        </div>
       </div>
 
-      {/* Legend below */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-auto">
-        {allResults.map((item, index) => (
-          <div key={index} className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div 
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-xs truncate">{item.name}</span>
+      {/* Legend below - 2 columns, sorted by value descending, column 1 then column 2 */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-auto">
+        {/* Column 1 */}
+        <div className="flex flex-col gap-1.5">
+          {column1.map((item, index) => (
+            <div key={index} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div 
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-xs truncate">{item.name}</span>
+              </div>
+              <span className="text-xs font-semibold flex-shrink-0">{item.value}</span>
             </div>
-            <span className="text-xs font-semibold flex-shrink-0">{item.value}</span>
-          </div>
-        ))}
+          ))}
+        </div>
+        {/* Column 2 */}
+        <div className="flex flex-col gap-1.5">
+          {column2.map((item, index) => (
+            <div key={index} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div 
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-xs truncate">{item.name}</span>
+              </div>
+              <span className="text-xs font-semibold flex-shrink-0">{item.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
