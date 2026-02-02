@@ -209,9 +209,10 @@ export function useDashboardMetrics() {
     });
 
     sortedMonths.forEach(([month, monthEntries]) => {
-      // Contagem por tipo de resultado
-      const wins = monthEntries.filter(e => e.resultado === 'G').length;
-      const losses = monthEntries.filter(e => e.resultado === 'P').length;
+      // Contagem baseada no lucro: lucro > 0 = ganho, lucro < 0 = perda
+      // Isso inclui todos os tipos de resultado (G, P, GM, PM, C, D, etc.)
+      const wins = monthEntries.filter(e => (e.lucro || 0) > 0).length;
+      const losses = monthEntries.filter(e => (e.lucro || 0) < 0).length;
       const cashouts = monthEntries.filter(e => e.resultado === 'C').length;
       const returned = monthEntries.filter(e => e.resultado === 'D').length;
       const halfWins = monthEntries.filter(e => e.resultado === 'GM').length;
