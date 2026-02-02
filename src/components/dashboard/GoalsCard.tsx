@@ -187,8 +187,9 @@ export function GoalsCard() {
     }
   };
 
-  // Arc path calculation for progress gauge
+  // Arc path calculation for progress gauge (semi-circle, max 180 degrees)
   const getArcPath = (percentage: number, radius: number, cx: number, cy: number) => {
+    // For a semi-circle gauge from left (-180°) to right (0°)
     const startAngle = -180;
     const endAngle = startAngle + (percentage / 100) * 180;
     
@@ -200,9 +201,9 @@ export function GoalsCard() {
     const x2 = cx + radius * Math.cos(endRad);
     const y2 = cy + radius * Math.sin(endRad);
     
-    const largeArc = percentage > 50 ? 1 : 0;
-    
-    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
+    // For a semi-circle (max 180°), largeArc is always 0
+    // since we never draw more than 180 degrees
+    return `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`;
   };
 
   const isGoalMet = progressData.percentage >= 100;
@@ -307,31 +308,31 @@ export function GoalsCard() {
       {/* Progress Arc */}
       <div className="flex flex-col items-center justify-center flex-1">
         <div className="relative w-full flex justify-center">
-          <svg width="200" height="110" viewBox="0 0 200 110">
+          <svg width="260" height="140" viewBox="0 0 260 140">
             {/* Background arc */}
             <path
-              d={getArcPath(100, 85, 100, 95)}
+              d={getArcPath(100, 110, 130, 125)}
               fill="none"
               stroke="hsl(var(--muted))"
-              strokeWidth="12"
+              strokeWidth="14"
               strokeLinecap="round"
             />
             {/* Progress arc */}
             {progressData.percentage > 0 && (
               <path
-                d={getArcPath(progressData.percentage, 85, 100, 95)}
+                d={getArcPath(progressData.percentage, 110, 130, 125)}
                 fill="none"
                 stroke="hsl(var(--success))"
-                strokeWidth="12"
+                strokeWidth="14"
                 strokeLinecap="round"
               />
             )}
             {/* End dot */}
             {progressData.percentage > 0 && (
               <circle
-                cx={100 + 85 * Math.cos(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
-                cy={95 + 85 * Math.sin(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
-                r="6"
+                cx={130 + 110 * Math.cos(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
+                cy={125 + 110 * Math.sin(((-180 + (progressData.percentage / 100) * 180) * Math.PI) / 180)}
+                r="7"
                 fill="hsl(var(--success))"
               />
             )}
