@@ -69,17 +69,17 @@ export function WinRateChart() {
         </button>
       </div>
 
-      {/* Pie Chart and Win Rate side by side */}
-      <div className="flex items-center justify-center gap-6 mb-4">
-        <div className="h-[140px] w-[140px] flex-shrink-0">
+      {/* Pie Chart and Win Rate - centered in available space */}
+      <div className="flex-1 flex items-center justify-center gap-6">
+        <div className="h-[160px] w-[160px] flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={45}
-                outerRadius={65}
+                innerRadius={50}
+                outerRadius={75}
                 paddingAngle={3}
                 dataKey="value"
               >
