@@ -306,8 +306,8 @@ const Entradas = () => {
       
       // If primary sort is equal, sort by created_at (newest first for desc, oldest first for asc)
       if (comparison === 0) {
-        const aCreated = new Date(a.data + 'T00:00:00').getTime();
-        const bCreated = new Date(b.data + 'T00:00:00').getTime();
+        const aCreated = new Date(a.createdAt).getTime();
+        const bCreated = new Date(b.createdAt).getTime();
         const createdComparison = bCreated - aCreated; // Newest first by default
         return filters.sortOrder === 'asc' ? -createdComparison : createdComparison;
       }
@@ -353,7 +353,7 @@ const Entradas = () => {
         return;
       }
 
-      const novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[] = [];
+      const novasEntradas: Omit<Entrada, 'id' | 'bancaId' | 'createdAt'>[] = [];
       const linhasIgnoradas: { linha: number; motivo: string }[] = [];
       
       // Helper para validar data

@@ -59,6 +59,7 @@ export interface Entrada {
   timing: string;
   site: string;
   bancaId: string;
+  createdAt: string;
 }
 
 interface BancaContextType {
@@ -74,7 +75,7 @@ interface BancaContextType {
   editBanca: (id: string, name: string, balance: number, initialBalance: number) => Promise<void>;
   deleteBanca: (id: string) => Promise<void>;
   entradas: Entrada[];
-  addEntradas: (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => Promise<void>;
+  addEntradas: (novasEntradas: Omit<Entrada, 'id' | 'bancaId' | 'createdAt'>[]) => Promise<void>;
   updateEntrada: (entrada: Entrada) => Promise<void>;
   deleteEntrada: (id: string) => Promise<void>;
   getEntradasByBanca: () => Entrada[];
@@ -185,7 +186,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('entradas')
         .select('*')
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
 
       if (error) {
@@ -217,6 +218,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       timing: e.timing || 'PRÉ',
       site: e.betting_house || '',
       bancaId: e.banca_id,
+      createdAt: e.created_at,
     }));
 
     setEntradas(mapped);
@@ -356,7 +358,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     toast.success('Banca excluída com sucesso!');
   };
 
-  const addEntradas = async (novasEntradas: Omit<Entrada, 'id' | 'bancaId'>[]) => {
+  const addEntradas = async (novasEntradas: Omit<Entrada, 'id' | 'bancaId' | 'createdAt'>[]) => {
     if (!user || selectedBancaIds.length !== 1) {
       toast.error('Selecione apenas uma banca para cadastrar a entrada.');
       return;
@@ -419,6 +421,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       timing: e.timing || 'PRÉ',
       site: e.betting_house || '',
       bancaId: e.banca_id,
+      createdAt: e.created_at,
     }));
 
     setEntradas((prev) => [...mapped, ...prev]);
