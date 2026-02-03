@@ -14,6 +14,17 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Search, Download, Plus, Upload, Pencil, Trash2, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { NewBetForm } from '@/components/forms/NewBetForm';
@@ -689,6 +700,56 @@ const Entradas = () => {
                 {selectedStats.totalProfit >= 0 ? '+' : ''}R$ {selectedStats.totalProfit.toFixed(2)}
               </span>
             </div>
+            <div className="h-4 w-px bg-border" />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Deletar selecionadas
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Você está prestes a excluir <strong>{selectedStats.count}</strong> entradas permanentemente.
+                    <br /><br />
+                    <span className="text-muted-foreground">
+                      Stake total: R$ {selectedStats.totalStake.toFixed(2)} | 
+                      Lucro/Perda: {selectedStats.totalProfit >= 0 ? '+' : ''}R$ {selectedStats.totalProfit.toFixed(2)}
+                    </span>
+                    <br /><br />
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      const idsToDelete = Array.from(selectedIds);
+                      let deleted = 0;
+                      for (const id of idsToDelete) {
+                        try {
+                          await deleteEntrada(id);
+                          deleted++;
+                        } catch (err) {
+                          console.error(`Erro ao deletar entrada ${id}:`, err);
+                        }
+                      }
+                      setSelectedIds(new Set());
+                      toast.success(`${deleted} entradas excluídas com sucesso!`);
+                    }}
+                  >
+                    Excluir {selectedStats.count} entradas
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <div className="h-4 w-px bg-border" />
             <Button 
               variant="ghost" 
