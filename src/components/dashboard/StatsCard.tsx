@@ -7,6 +7,7 @@ interface StatsCardProps {
   value: string;
   change?: number;
   changeLabel?: string;
+  pnlValue?: number;
   icon?: ReactNode;
   className?: string;
   variant?: 'default' | 'success' | 'danger';
@@ -17,6 +18,7 @@ export function StatsCard({
   value, 
   change, 
   changeLabel,
+  pnlValue,
   icon,
   className,
   variant = 'default'
@@ -47,21 +49,33 @@ export function StatsCard({
             {value}
           </p>
           
-          {change !== undefined && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className={cn(
-                "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium",
-                isPositive 
-                  ? "bg-success/10 text-success" 
-                  : "bg-destructive/10 text-destructive"
-              )}>
-                {isPositive ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : (
-                  <TrendingDown className="w-3 h-3" />
-                )}
-                {isPositive ? '+' : ''}{change.toFixed(2)}%
-              </span>
+          {(pnlValue !== undefined || change !== undefined) && (
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {pnlValue !== undefined && (
+                <span className={cn(
+                  "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium",
+                  pnlValue >= 0 
+                    ? "bg-success/10 text-success" 
+                    : "bg-destructive/10 text-destructive"
+                )}>
+                  {pnlValue >= 0 ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  {pnlValue >= 0 ? '+' : ''}R$ {Math.abs(pnlValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              )}
+              {change !== undefined && (
+                <span className={cn(
+                  "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium",
+                  isPositive 
+                    ? "bg-success/10 text-success" 
+                    : "bg-destructive/10 text-destructive"
+                )}>
+                  {isPositive ? '+' : ''}{change.toFixed(2)}%
+                </span>
+              )}
               {changeLabel && (
                 <span className="text-xs text-muted-foreground">{changeLabel}</span>
               )}
