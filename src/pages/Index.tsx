@@ -89,6 +89,7 @@ const Index = () => {
             <StatsCard
               title="Banca Atual"
               value={`R$ ${metrics.currentBankroll.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              pnlValue={metrics.totalPnL}
               change={metrics.roi}
               changeLabel="ROI total"
               icon={<Wallet className="w-4 h-4" />}
