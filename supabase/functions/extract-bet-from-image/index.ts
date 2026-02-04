@@ -33,7 +33,19 @@ Analise a imagem do bilhete e extraia TODAS as apostas contidas nele. Isso inclu
 
 Para CADA aposta/seleção encontrada, extraia:
 - match: Nome da partida/confronto (ex: "Flamengo x Palmeiras")
-- modality: Modalidade do esporte (FUTEBOL, BASQUETE, TÊNIS, MMA, ESPORTS, OUTRO)
+- modality: Modalidade do esporte. Use EXATAMENTE uma destas opções:
+  BADMINTON, BASEBALL, BASQUETE, CRICKET, CRYPTO, CSGO, DARDOS, DOTA2, ELEIÇÕES, F1, FIFA, FMS, FOOTBALL, FUTEBOL, HALO, HANDEBOL, HOCKEY, LOL, MMA, MÚLTIPLA, NFL, R6, RUGBY, SINUCA, TÊNIS, TÊNIS DE MESA, UFC, VALORANT, VÔLEI
+  
+  REGRAS IMPORTANTES PARA ESPORTS:
+  - Se o evento mencionar "League of Legends" ou "LoL", use "LOL"
+  - Se o evento mencionar "Counter-Strike", "CS:GO", "CS2" ou "Counter Strike", use "CSGO"
+  - Se o evento mencionar "Valorant", use "VALORANT"
+  - Se o evento mencionar "Dota 2" ou "Dota2", use "DOTA2"
+  - Se o evento mencionar "Rainbow Six" ou "R6", use "R6"
+  - Se o evento mencionar "Halo", use "HALO"
+  - Se o evento mencionar "FIFA" ou "eFootball", use "FIFA"
+  - NUNCA use "ESPORTS" como modalidade - sempre identifique o jogo específico
+
 - market: Tipo de mercado apostado. IMPORTANTE: Se o mercado for "1x2" ou "1X2", converta para "Vencedor"
 - entry: A entrada/seleção feita (ex: "Vitória do Flamengo", "Acima de 2.5 gols")
 - odd: O valor da odd INDIVIDUAL desta seleção (número decimal, ex: 1.85). Se não visível, use null.
