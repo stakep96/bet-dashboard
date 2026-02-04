@@ -44,8 +44,18 @@ export function GoalsCard() {
   
   const [metas, setMetas] = useState<Meta[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<'anual' | number>('anual');
+  const [selectedPeriod, setSelectedPeriod] = useState<'anual' | number>(() => {
+    const saved = localStorage.getItem('goals_selected_period');
+    if (saved === 'anual' || saved === null) return 'anual';
+    const parsed = parseInt(saved, 10);
+    return isNaN(parsed) ? 'anual' : parsed;
+  });
   const [periodOpen, setPeriodOpen] = useState(false);
+
+  // Persist selected period to localStorage
+  useEffect(() => {
+    localStorage.setItem('goals_selected_period', String(selectedPeriod));
+  }, [selectedPeriod]);
   
   // Form states - now derived from which period's edit button was clicked
   const [editingPeriod, setEditingPeriod] = useState<'anual' | number | null>(null);
