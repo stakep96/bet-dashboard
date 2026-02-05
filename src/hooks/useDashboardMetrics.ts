@@ -49,6 +49,7 @@ export interface MonthlyStats {
   pnl: number;
   roi: number;
   bankroll: number;
+  bankrollGrowth: number;
 }
 
 export function useDashboardMetrics() {
@@ -230,6 +231,14 @@ export function useDashboardMetrics() {
 
       cumulativeBankroll += pnl;
 
+      // Calcular crescimento da banca
+      // Primeiro mês: baseado no saldo inicial
+      // Demais meses: baseado no fechamento do mês anterior
+      const previousBankroll = stats.length === 0 ? initialBalance : stats[stats.length - 1].bankroll;
+      const bankrollGrowth = previousBankroll > 0 
+        ? ((cumulativeBankroll - previousBankroll) / previousBankroll) * 100 
+        : 0;
+
       stats.push({
         month: month.charAt(0).toUpperCase() + month.slice(1),
         entries: monthEntries.length,
@@ -246,6 +255,7 @@ export function useDashboardMetrics() {
         pnl,
         roi,
         bankroll: cumulativeBankroll,
+        bankrollGrowth,
       });
     });
 
