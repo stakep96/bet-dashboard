@@ -35,6 +35,7 @@ export function MonthlyPerformance() {
               <th className="text-center py-3 px-2 text-xs font-medium text-muted-foreground">G/P</th>
               <th className="text-center py-3 px-2 text-xs font-medium text-muted-foreground">ROI</th>
               <th className="text-right py-3 px-2 text-xs font-medium text-muted-foreground">PNL</th>
+              <th className="text-center py-3 px-2 text-xs font-medium text-muted-foreground">Cresc. Banca</th>
               <th className="text-right py-3 px-2 text-xs font-medium text-muted-foreground">Banca</th>
             </tr>
           </thead>
@@ -59,6 +60,12 @@ export function MonthlyPerformance() {
                   month.pnl >= 0 ? "text-success" : "text-destructive"
                 )}>
                   {month.pnl >= 0 ? '+' : ''}R$ {Math.abs(month.pnl).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </td>
+                <td className={cn(
+                  "py-3 px-2 text-center text-sm font-medium",
+                  month.bankrollGrowth >= 0 ? "text-success" : "text-destructive"
+                )}>
+                  {month.bankrollGrowth >= 0 ? '+' : ''}{month.bankrollGrowth.toFixed(2)}%
                 </td>
                 <td className="py-3 px-2 text-right text-sm">
                   R$ {month.bankroll.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
