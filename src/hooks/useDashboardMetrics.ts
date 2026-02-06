@@ -186,12 +186,34 @@ export function useDashboardMetrics(selectedMonth?: Date | null) {
     };
   }, [entradas, getTotalInitialBalance, getTotalBalance]);
 
-  // Generate bankroll history from entries, starting from initialBalance
+  // Generate bankroll history from entries, starting from initialBalance or previous month's closing
   // Uses eventDate for statistics instead of registration date
   const bankrollHistory = useMemo((): BankrollDataPoint[] => {
     const initialBalance = getTotalInitialBalance();
     
     if (entradas.length === 0) return [];
+
+    // Calculate starting balance for the selected period
+    let startingBalance = initialBalance;
+    
+    if (selectedMonth !== null && selectedMonth !== undefined) {
+      // For a specific month, calculate the cumulative PnL up to the end of the previous month
+      const targetMonth = selectedMonth.getMonth();
+      const targetYear = selectedMonth.getFullYear();
+      
+      const previousMonthsPnL = allEntradas
+        .filter(entrada => {
+          const dateStr = entrada.dataEvento || entrada.data;
+          const date = parseEntradaDate(dateStr);
+          // Include all entries before the target month
+          if (date.getFullYear() < targetYear) return true;
+          if (date.getFullYear() === targetYear && date.getMonth() < targetMonth) return true;
+          return false;
+        })
+        .reduce((acc, e) => acc + (e.lucro || 0), 0);
+      
+      startingBalance = initialBalance + previousMonthsPnL;
+    }
 
     // Sort entries by event date (fall back to registration date if not available)
     const sortedEntradas = [...entradas].sort((a, b) => {
@@ -210,8 +232,8 @@ export function useDashboardMetrics(selectedMonth?: Date | null) {
       dailyData.set(dateKey, current + entrada.lucro);
     });
 
-    // Start from initial balance
-    let cumulativeValue = initialBalance;
+    // Start from the calculated starting balance (initial or previous month's closing)
+    let cumulativeValue = startingBalance;
     const history: BankrollDataPoint[] = [];
     
     dailyData.forEach((pnl, date) => {
@@ -225,7 +247,7 @@ export function useDashboardMetrics(selectedMonth?: Date | null) {
     });
 
     return history;
-  }, [entradas, getTotalInitialBalance]);
+  }, [entradas, allEntradas, selectedMonth, getTotalInitialBalance]);
 
   // Generate daily PnL data using event date
   const dailyPnL = useMemo((): DailyPnLDataPoint[] => {
