@@ -37,10 +37,14 @@ const MONTHS = [
   { value: 12, label: 'Dezembro' },
 ];
 
-export function GoalsCard() {
+interface GoalsCardProps {
+  selectedMonth?: Date | null;
+}
+
+export function GoalsCard({ selectedMonth }: GoalsCardProps) {
   const { user } = useAuth();
   const { selectedBancaIds, isVisaoGeral } = useBanca();
-  const { metrics, monthlyStats } = useDashboardMetrics();
+  const { metrics, monthlyStats } = useDashboardMetrics(selectedMonth);
   
   const [metas, setMetas] = useState<Meta[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);

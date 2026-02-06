@@ -136,25 +136,25 @@ const Index = () => {
           {/* Charts Row - adjusted column spans */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
             <div className="lg:col-span-6">
-              <BankrollChart />
+              <BankrollChart selectedMonth={selectedMonth} />
             </div>
             <div className="lg:col-span-3">
-              <WinRateChart />
+              <WinRateChart selectedMonth={selectedMonth} />
             </div>
             <div className="lg:col-span-3">
-              <GoalsCard />
+              <GoalsCard selectedMonth={selectedMonth} />
             </div>
           </div>
 
           {/* PNL Chart */}
           <div className="mb-6">
-            <DailyPnLChart />
+            <DailyPnLChart selectedMonth={selectedMonth} />
           </div>
 
           {/* Tables Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <RecentBets />
-            <MonthlyPerformance />
+            <RecentBets selectedMonth={selectedMonth} />
+            <MonthlyPerformance selectedMonth={selectedMonth} />
           </div>
         </main>
       </div>

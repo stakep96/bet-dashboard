@@ -20,8 +20,12 @@ const resultLabels: Record<string, string> = {
   Pendente: '...',
 };
 
-export function RecentBets() {
-  const { recentBets, hasData } = useDashboardMetrics();
+interface RecentBetsProps {
+  selectedMonth?: Date | null;
+}
+
+export function RecentBets({ selectedMonth }: RecentBetsProps) {
+  const { recentBets, hasData } = useDashboardMetrics(selectedMonth);
 
   if (!hasData) {
     return (

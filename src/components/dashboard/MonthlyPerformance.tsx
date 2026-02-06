@@ -1,8 +1,12 @@
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { cn } from '@/lib/utils';
 
-export function MonthlyPerformance() {
-  const { monthlyStats, hasData } = useDashboardMetrics();
+interface MonthlyPerformanceProps {
+  selectedMonth?: Date | null;
+}
+
+export function MonthlyPerformance({ selectedMonth }: MonthlyPerformanceProps) {
+  const { monthlyStats, hasData } = useDashboardMetrics(selectedMonth);
 
   if (!hasData) {
     return (
