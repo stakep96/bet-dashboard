@@ -1,8 +1,12 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 
-export function WinRateChart() {
-  const { metrics, hasData } = useDashboardMetrics();
+interface WinRateChartProps {
+  selectedMonth?: Date | null;
+}
+
+export function WinRateChart({ selectedMonth }: WinRateChartProps) {
+  const { metrics, hasData } = useDashboardMetrics(selectedMonth);
 
   // Dados completos para exibição (incluindo valores zerados na legenda)
   // Ordenados do maior para o menor valor

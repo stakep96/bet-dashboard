@@ -17,10 +17,14 @@ const parseChartDate = (dateStr: string): Date | null => {
 
 type Period = '1W' | '1M' | '3M' | '6M' | '1Y';
 
-export function DailyPnLChart() {
+interface DailyPnLChartProps {
+  selectedMonth?: Date | null;
+}
+
+export function DailyPnLChart({ selectedMonth }: DailyPnLChartProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
   const { isVisaoGeral, getSelectedBancas } = useBanca();
-  const { dailyPnL, hasData } = useDashboardMetrics();
+  const { dailyPnL, hasData } = useDashboardMetrics(selectedMonth);
   const selectedBancas = getSelectedBancas();
 
   const filteredData = filterByPeriod(dailyPnL, selectedPeriod);

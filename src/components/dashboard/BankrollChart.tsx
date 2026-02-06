@@ -25,10 +25,14 @@ const parseChartDate = (dateStr: string): Date | null => {
   return null;
 };
 
-export function BankrollChart() {
+interface BankrollChartProps {
+  selectedMonth?: Date | null;
+}
+
+export function BankrollChart({ selectedMonth }: BankrollChartProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('3M');
   const { isVisaoGeral, getSelectedBancas } = useBanca();
-  const { bankrollHistory, hasData } = useDashboardMetrics();
+  const { bankrollHistory, hasData } = useDashboardMetrics(selectedMonth);
   const selectedBancas = getSelectedBancas();
 
   // Filter data based on selected period
