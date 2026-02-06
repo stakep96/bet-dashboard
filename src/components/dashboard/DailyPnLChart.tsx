@@ -69,23 +69,11 @@ export function DailyPnLChart() {
 
   return (
     <div className="bg-card rounded-xl p-5 border border-border shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
-            <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-              {isVisaoGeral ? 'Visão Geral' : selectedBancas[0]?.name || ''}
-            </span>
-          </div>
-          <p className="text-2xl font-bold mt-1">
-            R$ {Math.abs(totalPnL).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-        </div>
-        <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
-          isPositive ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-        }`}>
-          {isPositive ? '+' : '-'}{Math.abs(totalPnL).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-        </div>
+      <div className="flex items-center gap-2 mb-6">
+        <h3 className="text-sm font-medium text-muted-foreground">PNL Diário</h3>
+        <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
+          {isVisaoGeral ? 'Visão Geral' : selectedBancas[0]?.name || ''}
+        </span>
       </div>
 
       <div className="flex gap-2 mb-4">
