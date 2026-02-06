@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -16,7 +16,21 @@ import { Wallet, TrendingUp, Target, BarChart3, Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [showNewBetForm, setShowNewBetForm] = useState(false);
-  const { metrics, hasData } = useDashboardMetrics();
+  
+  // Month filter state - persisted in localStorage
+  const [selectedMonth, setSelectedMonth] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('dashboard_selected_month');
+    if (!saved || saved === 'null') return null;
+    const parsed = new Date(saved);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  });
+  
+  const handleMonthChange = (month: Date | null) => {
+    setSelectedMonth(month);
+    localStorage.setItem('dashboard_selected_month', month ? month.toISOString() : 'null');
+  };
+  
+  const { metrics, hasData, availableMonths } = useDashboardMetrics(selectedMonth);
   const { addEntradas, selectedBancaIds, loading } = useBanca();
 
   const handleNewBet = async (data: any) => {
@@ -81,7 +95,12 @@ const Index = () => {
       <Sidebar />
       
       <div className="ml-72">
-        <Header onNewEntry={() => setShowNewBetForm(true)} />
+        <Header 
+          onNewEntry={() => setShowNewBetForm(true)} 
+          selectedMonth={selectedMonth}
+          onMonthChange={handleMonthChange}
+          availableMonths={availableMonths}
+        />
         
         <main className="p-6">
           {/* Stats Cards */}

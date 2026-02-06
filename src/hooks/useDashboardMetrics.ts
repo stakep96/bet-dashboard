@@ -52,9 +52,87 @@ export interface MonthlyStats {
   bankrollGrowth: number;
 }
 
-export function useDashboardMetrics() {
+// Helper to parse entrada date (handles various formats)
+// IMPORTANT: Parse dates as local time to avoid timezone issues
+function parseEntradaDate(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  
+  // Try common formats
+  const cleanDate = dateStr.split(' ')[0]; // Remove time if present
+  
+  // DD/MM/YYYY format
+  if (cleanDate.includes('/')) {
+    const parts = cleanDate.split('/');
+    if (parts.length === 3) {
+      const [day, month, year] = parts.map(Number);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month - 1, day);
+      }
+    }
+  }
+  
+  // YYYY-MM-DD format - parse as local time, not UTC
+  if (cleanDate.includes('-')) {
+    const parts = cleanDate.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts.map(Number);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return new Date(year, month - 1, day);
+      }
+    }
+  }
+  
+  const fallback = new Date(dateStr);
+  return isNaN(fallback.getTime()) ? new Date() : fallback;
+}
+
+// Format date for chart display
+function formatDateForChart(dateStr: string): string {
+  const date = parseEntradaDate(dateStr);
+  if (isNaN(date.getTime())) {
+    return 'N/A';
+  }
+  return format(date, 'dd/MM');
+}
+
+export function useDashboardMetrics(selectedMonth?: Date | null) {
   const { getEntradasByBanca, getTotalInitialBalance, getTotalBalance, isVisaoGeral } = useBanca();
-  const entradas = getEntradasByBanca();
+  const allEntradas = getEntradasByBanca();
+  
+  // Filter entries by selected month (if any)
+  const entradas = useMemo(() => {
+    if (selectedMonth === null || selectedMonth === undefined) {
+      return allEntradas; // Anual - show all
+    }
+    
+    const targetMonth = selectedMonth.getMonth();
+    return allEntradas.filter(entrada => {
+      const dateStr = entrada.dataEvento || entrada.data;
+      const date = parseEntradaDate(dateStr);
+      return date.getMonth() === targetMonth;
+    });
+  }, [allEntradas, selectedMonth]);
+  
+  // Get available months from all entries
+  const availableMonths = useMemo(() => {
+    if (allEntradas.length === 0) return [];
+    
+    const monthsSet = new Set<string>();
+    const months: Date[] = [];
+    
+    allEntradas.forEach(entrada => {
+      const dateStr = entrada.dataEvento || entrada.data;
+      const date = parseEntradaDate(dateStr);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      
+      if (!monthsSet.has(key)) {
+        monthsSet.add(key);
+        months.push(new Date(date.getFullYear(), date.getMonth(), 1));
+      }
+    });
+    
+    return months.sort((a, b) => a.getTime() - b.getTime());
+  }, [allEntradas]);
 
   const metrics = useMemo((): DashboardMetrics => {
     const initialBalance = getTotalInitialBalance();
@@ -280,52 +358,9 @@ export function useDashboardMetrics() {
     monthlyStats,
     recentBets,
     hasData: entradas.length > 0,
+    availableMonths,
   };
 }
-
-// Helper to parse entrada date (handles various formats)
-// IMPORTANT: Parse dates as local time to avoid timezone issues
-function parseEntradaDate(dateStr: string): Date {
-  if (!dateStr) return new Date();
-  
-  // Try common formats
-  const cleanDate = dateStr.split(' ')[0]; // Remove time if present
-  
-  // DD/MM/YYYY format
-  if (cleanDate.includes('/')) {
-    const parts = cleanDate.split('/');
-    if (parts.length === 3) {
-      const [day, month, year] = parts.map(Number);
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        return new Date(year, month - 1, day);
-      }
-    }
-  }
-  
-  // YYYY-MM-DD format - parse as local time, not UTC
-  if (cleanDate.includes('-')) {
-    const parts = cleanDate.split('-');
-    if (parts.length === 3) {
-      const [year, month, day] = parts.map(Number);
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        return new Date(year, month - 1, day);
-      }
-    }
-  }
-  
-  const fallback = new Date(dateStr);
-  return isNaN(fallback.getTime()) ? new Date() : fallback;
-}
-
-// Format date for chart display
-function formatDateForChart(dateStr: string): string {
-  const date = parseEntradaDate(dateStr);
-  if (isNaN(date.getTime())) {
-    return 'N/A';
-  }
-  return format(date, 'dd/MM');
-}
-
 // Filter function for period selection
 export function filterByPeriod<T extends { date: string }>(
   data: T[],
