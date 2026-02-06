@@ -138,11 +138,33 @@ export function useDashboardMetrics(selectedMonth?: Date | null) {
     const initialBalance = getTotalInitialBalance();
     const currentBalance = getTotalBalance();
 
-    // Quando há entradas, o saldo atual deve refletir o valor inicial + lucro/prejuízo acumulado.
-    // Quando não há entradas, usamos o saldo salvo na banca (útil para bancas recém-criadas/ajustadas manualmente).
+    // Calculate baseline for the selected period
+    // For annual view (null), use initial balance
+    // For specific months, use initial balance + cumulative PnL from all previous months
+    let periodBaseline = initialBalance;
+    
+    if (selectedMonth !== null && selectedMonth !== undefined) {
+      const targetMonth = selectedMonth.getMonth();
+      const targetYear = selectedMonth.getFullYear();
+      
+      const previousMonthsPnL = allEntradas
+        .filter(entrada => {
+          const dateStr = entrada.dataEvento || entrada.data;
+          const date = parseEntradaDate(dateStr);
+          // Include all entries before the target month
+          if (date.getFullYear() < targetYear) return true;
+          if (date.getFullYear() === targetYear && date.getMonth() < targetMonth) return true;
+          return false;
+        })
+        .reduce((acc, e) => acc + (e.lucro || 0), 0);
+      
+      periodBaseline = initialBalance + previousMonthsPnL;
+    }
+
+    // PnL from current period entries only
     const pnlFromEntradas = entradas.reduce((acc, e) => acc + (e.lucro || 0), 0);
-    const totalPnL = entradas.length > 0 ? pnlFromEntradas : currentBalance - initialBalance;
-    const currentBankroll = entradas.length > 0 ? initialBalance + pnlFromEntradas : currentBalance;
+    const totalPnL = entradas.length > 0 ? pnlFromEntradas : currentBalance - periodBaseline;
+    const currentBankroll = entradas.length > 0 ? periodBaseline + pnlFromEntradas : currentBalance;
 
     // Para winrate: G e GM são vitórias, P e PM são derrotas
     // Cashout (C) e Devolvida (D) não contam para winrate mas contribuem para PnL
@@ -158,8 +180,8 @@ export function useDashboardMetrics(selectedMonth?: Date | null) {
 
     const totalStaked = entradas.reduce((acc, e) => acc + e.stake, 0);
 
-    // ROI baseado no valor inicial da banca
-    const roi = initialBalance > 0 ? (totalPnL / initialBalance) * 100 : 0;
+    // ROI baseado no valor de abertura do período (baseline)
+    const roi = periodBaseline > 0 ? (totalPnL / periodBaseline) * 100 : 0;
 
     const avgOdd = entradas.length > 0
       ? entradas.reduce((acc, e) => acc + e.odd, 0) / entradas.length
@@ -184,7 +206,7 @@ export function useDashboardMetrics(selectedMonth?: Date | null) {
       avgStake,
       totalStaked,
     };
-  }, [entradas, getTotalInitialBalance, getTotalBalance]);
+  }, [entradas, allEntradas, selectedMonth, getTotalInitialBalance, getTotalBalance]);
 
   // Generate bankroll history from entries, starting from initialBalance or previous month's closing
   // Uses eventDate for statistics instead of registration date
