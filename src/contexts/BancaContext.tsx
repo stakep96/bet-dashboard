@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
@@ -83,6 +83,7 @@ interface BancaContextType {
   getTotalBalance: () => number;
   getTotalInitialBalance: () => number;
   refreshData: () => Promise<void>;
+  onEntradasAdded: (callback: (entradas: Entrada[], bancaName: string) => void) => () => void;
 }
 
 const BancaContext = createContext<BancaContextType | undefined>(undefined);
@@ -122,6 +123,9 @@ export function BancaProvider({ children }: { children: ReactNode }) {
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialPreferenceApplied, setInitialPreferenceApplied] = useState(false);
+  
+  // Callback for when entries are added (used by Zapier integration)
+  const entradasAddedCallbacks = useRef<Set<(entradas: Entrada[], bancaName: string) => void>>(new Set());
 
   const fetchBancas = useCallback(async () => {
     if (!user) return;
@@ -441,6 +445,12 @@ export function BancaProvider({ children }: { children: ReactNode }) {
         );
       }
     }
+    
+    // Notify listeners (Zapier integration)
+    const bancaName = bancas.find(b => b.id === bancaId)?.name || 'Banca';
+    entradasAddedCallbacks.current.forEach(callback => {
+      callback(mapped, bancaName);
+    });
   };
 
   const updateEntrada = async (entrada: Entrada) => {
@@ -534,6 +544,13 @@ export function BancaProvider({ children }: { children: ReactNode }) {
     return getSelectedBancas().reduce((acc, b) => acc + b.initialBalance, 0);
   };
 
+  const onEntradasAdded = useCallback((callback: (entradas: Entrada[], bancaName: string) => void) => {
+    entradasAddedCallbacks.current.add(callback);
+    return () => {
+      entradasAddedCallbacks.current.delete(callback);
+    };
+  }, []);
+
   return (
     <BancaContext.Provider value={{
       bancas,
@@ -556,6 +573,7 @@ export function BancaProvider({ children }: { children: ReactNode }) {
       getTotalBalance,
       getTotalInitialBalance,
       refreshData,
+      onEntradasAdded,
     }}>
       {children}
     </BancaContext.Provider>

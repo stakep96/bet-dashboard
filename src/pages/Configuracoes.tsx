@@ -13,23 +13,29 @@ import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { User, Bell, Palette, Database, Trash2, Download, CalendarIcon, LogOut, Check, ChevronRight } from 'lucide-react';
+import { User, Bell, Palette, Database, Trash2, Download, CalendarIcon, LogOut, Check, ChevronRight, Zap, ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBanca } from '@/contexts/BancaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExportCSV } from '@/hooks/useExportCSV';
 import { useProfile } from '@/hooks/useProfile';
+import { useZapier } from '@/contexts/ZapierContext';
 
 const Configuracoes = () => {
   const { bancas, entradas } = useBanca();
   const { user, signOut } = useAuth();
   const { exportToCSV } = useExportCSV();
   const { displayName, updateProfile, getInitials } = useProfile();
+  const { webhookUrl, setWebhookUrl, isEnabled, setEnabled, testWebhook } = useZapier();
   
   // Profile editing state
   const [editName, setEditName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
+  
+  // Zapier state
+  const [tempWebhookUrl, setTempWebhookUrl] = useState('');
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   
   // Export filters
   const [exportBancaId, setExportBancaId] = useState<string>('');
@@ -92,6 +98,31 @@ const Configuracoes = () => {
     toast.success('Logout realizado com sucesso!');
   };
 
+  const handleSaveWebhook = () => {
+    if (!tempWebhookUrl.trim()) {
+      toast.error('Cole a URL do webhook do Zapier');
+      return;
+    }
+    setWebhookUrl(tempWebhookUrl.trim());
+    toast.success('Webhook salvo!');
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookUrl) {
+      toast.error('Salve a URL do webhook primeiro');
+      return;
+    }
+    
+    setIsTestingWebhook(true);
+    const success = await testWebhook();
+    setIsTestingWebhook(false);
+    
+    if (success) {
+      toast.success('Teste enviado! Verifique o histórico do seu Zap no Zapier.');
+    } else {
+      toast.error('Erro ao enviar teste');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -272,6 +303,89 @@ const Configuracoes = () => {
                   <Download className="h-4 w-4" />
                   Exportar CSV
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Zapier Integration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Backup Automático (Zapier)
+                </CardTitle>
+                <CardDescription>
+                  Sincronize automaticamente suas entradas com Google Sheets via Zapier
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Ativar sincronização</p>
+                    <p className="text-sm text-muted-foreground">Enviar novas entradas automaticamente para o Zapier</p>
+                  </div>
+                  <Switch 
+                    checked={isEnabled} 
+                    onCheckedChange={setEnabled}
+                    disabled={!webhookUrl}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-3">
+                  <Label>URL do Webhook</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="https://hooks.zapier.com/hooks/catch/..."
+                      value={tempWebhookUrl || webhookUrl}
+                      onChange={(e) => setTempWebhookUrl(e.target.value)}
+                    />
+                    <Button onClick={handleSaveWebhook}>
+                      Salvar
+                    </Button>
+                  </div>
+                  {webhookUrl && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Check className="h-3 w-3 text-green-500" />
+                      Webhook configurado
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleTestWebhook}
+                    disabled={!webhookUrl || isTestingWebhook}
+                  >
+                    {isTestingWebhook ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Testando...
+                      </>
+                    ) : (
+                      'Testar conexão'
+                    )}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => window.open('https://zapier.com/app/zaps', '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Abrir Zapier
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-2">
+                  <p className="font-medium">Como configurar:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Crie um Zap com trigger "Webhooks by Zapier" → "Catch Hook"</li>
+                    <li>Copie a URL do webhook e cole acima</li>
+                    <li>Adicione ação "Google Sheets" → "Create Spreadsheet Row"</li>
+                    <li>Mapeie os campos: data, evento, odd, stake, resultado, lucro</li>
+                  </ol>
+                </div>
               </CardContent>
             </Card>
 
