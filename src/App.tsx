@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { BancaProvider } from "@/contexts/BancaContext";
+import { ZapierProvider } from "@/contexts/ZapierContext";
 import Index from "./pages/Index";
 import Estatisticas from "./pages/Estatisticas";
 import Entradas from "./pages/Entradas";
@@ -59,9 +60,11 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <BancaProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
+          <ZapierProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </ZapierProvider>
         </BancaProvider>
       </AuthProvider>
     </TooltipProvider>
